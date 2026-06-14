@@ -1,0 +1,13 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+docs/
+pkgdown/
+.DS_Store
+.claude/
+.positai/
+.cursor/
+*.tar.gz
+README.html

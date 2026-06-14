@@ -1,0 +1,220 @@
+---
+title: "From an inference result to a grain plan"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{From an inference result to a grain plan}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+set.seed(1L)
+```
+
+grainPlan is the practitioner last-mile of the ORCHESTRA agricultural analytics
+stack. An upstream member produces an inference result -- a yield posterior, a
+multi-environment variety trial, a genomic prediction -- and grainPlan turns it
+into an actionable grain-production plan: how much nitrogen to apply, which
+variety to sow, whether to chase a quality grade. It is a thin grain-semantics
+layer over the `decideR` decision engine: the expected-utility maximisation, the
+abstention logic, and the grounding firewall are all `decideR`'s, reused whole;
+grainPlan adds the grain economics and the grain meaning.
+
+This walkthrough runs end-to-end on public data from the *agridat* package -- a
+real nitrogen response trial and a real variety trial -- and shows the two
+behaviours that matter for a consequential real-world tool: grounded evidence
+*decides*, and unverified evidence *abstains* to the status quo.
+
+```{r libs, message = FALSE}
+library(grainPlan)
+have_agridat <- requireNamespace("agridat", quietly = TRUE)
+```
+
+## A nitrogen rate from a real yield response
+
+The *agridat* dataset `lasrosas.corn` records yield and applied nitrogen across
+a precision-agriculture corn trial in Argentina (Lasrosas farm). We summarise it
+into a yield-response curve, build a posterior of yield at each candidate rate,
+and ask grainPlan for the profit-optimal rate.
+
+The economics live in the grain value library. `n_rate_economics()` is the
+consolidation of the profit utility the orchestra runs kept hand-building --
+revenue at the grain price less the nitrogen cost -- so a profit-priced rate
+decision reads as its economics rather than as an anonymous expression.
+
+```{r nitrogen, eval = have_agridat}
+data("lasrosas.corn", package = "agridat")
+corn <- lasrosas.corn
+
+# A candidate nitrogen grid spanning the trial, and a simple yield-response
+# summary: mean yield in each nitrogen neighbourhood, with the trial's residual
+# spread used to build a posterior of yield at each rate. This stands in for the
+# yield posterior an ORCHESTRA inference member (a PESTO inversion, a TACI
+# yield-response model) would emit as an orchestra_manifest.
+rates <- seq(0, 120, by = 20)
+fit <- stats::lm(yield ~ nitro + I(nitro^2), data = corn)
+sigma <- summary(fit)$sigma
+
+n_draws <- 1500L
+yield_draws <- vapply(
+  rates,
+  function(r) {
+    mu <- stats::predict(fit, newdata = data.frame(nitro = r))
+    stats::rnorm(n_draws, mu, sigma)
+  },
+  numeric(n_draws))
+
+# Grain and nitrogen prices are the caller's to supply (illustrative here).
+n_plan <- plan_nitrogen_rate(
+  yield_draws, rates,
+  price_grain = 0.25,           # $ per unit yield (illustrative)
+  price_n = 1.2,                # $ per unit nitrogen (illustrative)
+  crop = "corn",
+  grounding = decideR::grounding_grounded())
+
+n_plan
+```
+
+The recommendation is a `grain_decision`: the chosen rate, the crop, a
+grower-facing rationale, and -- carried beside the numbers, never inferred from
+them -- the grounding token.
+
+### The firewall: unverified evidence abstains
+
+Now the decisive behaviour. If the yield evidence is *not* grounded -- the
+upstream producer did not verify it against an external authority -- the same
+decision must not be made. grainPlan inherits `decideR`'s Independent Oracle
+Principle firewall: an unverified input forces an honest abstention to the
+status-quo rate, never a confident wrong recommendation.
+
+```{r firewall, eval = have_agridat}
+n_plan_unverified <- plan_nitrogen_rate(
+  yield_draws, rates,
+  price_grain = 0.25, price_n = 1.2, crop = "corn",
+  grounding = decideR::grounding_unverified())
+
+n_plan_unverified
+```
+
+The only thing that changed is the grounding token, and it flipped *decide* into
+*abstain*. This is the firewall a real grain tool needs: a nitrogen rate carries
+a cost in the paddock, so an unverified yield model is held at the status quo,
+not acted on.
+
+## A variety choice from a multi-environment trial
+
+The *agridat* dataset `besag.met` is a multi-environment variety trial: 64
+genotypes across six environments. We summarise each genotype's mean performance
+across environments into a posterior of merit, and ask grainPlan to rank them
+under a downside-aware loss -- one that discounts a high-yielding but volatile
+line against a steady one, the stability a grower wants from a sown variety.
+
+```{r variety, eval = have_agridat}
+data("besag.met", package = "agridat")
+met <- besag.met
+
+# Genotype means across environments, with the trial's environment-to-environment
+# spread giving each genotype a merit posterior. (A factor-analytic MET model --
+# flexyBayes::fb_met_summary -- would emit this as an orchestra_manifest; here we
+# build it directly from the public trial. A few yield cells are missing, so we
+# summarise with na.rm and fall back to the trial-wide spread for any genotype
+# with too few records to estimate its own.)
+gen_means <- tapply(met$yield, met$gen, mean, na.rm = TRUE)
+gen_sd <- tapply(met$yield, met$gen, stats::sd, na.rm = TRUE)
+pooled_sd <- stats::sd(met$yield, na.rm = TRUE)
+gen_sd[is.na(gen_sd)] <- pooled_sd
+varieties <- names(gen_means)
+
+merit_draws <- vapply(
+  seq_along(gen_means),
+  function(j) stats::rnorm(1000L, gen_means[j], gen_sd[j]),
+  numeric(1000L))
+colnames(merit_draws) <- varieties
+
+v_plan <- plan_variety(
+  merit_draws, varieties, risk_aversion = 0.5, crop = "wheat",
+  grounding = decideR::grounding_grounded())
+
+v_plan
+```
+
+The recommendation is the leading genotype; the full ranked short-list is in the
+wrapped decision's candidate ledger:
+
+```{r shortlist, eval = have_agridat}
+ledger <- v_plan@decision@candidates
+ledger <- ledger[order(-ledger$expected_utility), ]
+head(ledger, 5L)
+```
+
+## A quality-grade decision
+
+Many grain payoffs are not smooth in the outcome they reward: a delivery is paid
+by quality *grade*, so the value steps at a protein threshold rather than rising
+continuously. grainPlan's value library consolidates these grade schedules.
+`wheat_protein_bands()` prices the Australian milling-wheat grades by protein,
+and `plan_grade_target()` decides how hard to push a protein-driving input under
+that step payoff -- a decision governed by the posterior probability of clearing
+each band, exactly the threshold economics `decideR`'s grade-band loss expresses.
+
+```{r grade}
+v <- wheat_protein_bands()
+v
+
+# A baseline protein posterior just below the milling band; a nitrogen top-up
+# lifts protein, at a per-unit cost. The decision weighs the chance of clearing
+# the 11.5% APW band against the cost.
+protein <- stats::rnorm(2000L, mean = 11.0, sd = 0.5)
+g_plan <- plan_grade_target(
+  protein, actions = seq(0, 60, by = 10), value = v,
+  quality_shift = function(rate, p) p + 0.02 * rate, cost = 1.3,
+  crop = "wheat", grounding = decideR::grounding_grounded())
+
+g_plan
+```
+
+## Composing a season plan
+
+Finally, the orchestrator. `plan_season()` gathers several grain decisions into
+one `grain_plan` whose grounding is the worst case across its decisions -- a plan
+that rests on any unverified decision is itself unverified, the firewall applied
+one level up. A plan with a declined component is flagged so a report never reads
+a confident headline over it.
+
+```{r season, eval = have_agridat}
+season <- plan_season(
+  list(v_plan, n_plan),
+  crop = "corn", season = "2026 demonstration")
+
+season
+
+grain_plan_table(season)
+```
+
+Every recommendation in the plan carries its grounding, and the plan as a whole
+carries the worst case -- so a grower, or a downstream automation, can gate on
+`grain_is_grounded()` before acting.
+
+```{r gate, eval = have_agridat}
+grain_is_grounded(season)
+```
+
+## Where this sits in the orchestra
+
+grainPlan consumes the `orchestra_manifest` contract through `decideR`'s
+duck-typed pipeline tail (`plan_nitrogen_rate_from_manifest()` and
+`plan_variety_from_manifest()` read an upstream member's manifest directly), and
+depends only on `decideR`. It reinvents nothing -- decision theory, manifest
+reading, and the grounding firewall are all `decideR`'s; grainPlan adds the grain
+semantics, consolidates the grain economics, and orchestrates the decisions into
+a plan a practitioner can act on.
+
+---
+
+*Data: `lasrosas.corn` and `besag.met` from the agridat package (Wright, K.
+agridat: Agricultural Datasets). The grade schedules follow published Australian
+wheat and barley receival conventions; all dollar values are illustrative.*

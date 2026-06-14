@@ -1,0 +1,19 @@
+## Hand-crafted CITATION. The version is read from the installed package's
+## DESCRIPTION (meta$Version) so the citation never drifts from the release.
+
+citHeader("To cite grainPlan in publications, use:")
+
+note <- sprintf("R package version %s", meta$Version)
+
+bibentry(
+  bibtype  = "Manual",
+  title    = "grainPlan: Grain-Specific Decision Orchestration on Top of Decision Theory",
+  author   = person(given = "Max", family = "Moldovan",
+                    comment = c(ORCID = "0000-0001-9680-8474")),
+  year     = "2026",
+  note     = note,
+  url      = "https://github.com/max578/grainPlan",
+  textVersion = paste0(
+    "Moldovan, M. (2026). grainPlan: Grain-Specific Decision Orchestration ",
+    "on Top of Decision Theory. ", note, ". ",
+    "https://github.com/max578/grainPlan"))

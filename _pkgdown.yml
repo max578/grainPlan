@@ -1,0 +1,35 @@
+url: https://github.com/max578/grainPlan
+
+template:
+  bootstrap: 5
+
+reference:
+  - title: Grain decisions
+    desc: >
+      The grain-semantics verbs -- each wraps decideR's engine with grain
+      meaning and returns a grain_decision.
+    contents:
+      - plan_nitrogen_rate
+      - plan_nitrogen_rate_from_manifest
+      - plan_variety
+      - plan_variety_from_manifest
+      - plan_grade_target
+  - title: The orchestrator
+    desc: Compose grain decisions into a provenance-carrying season plan.
+    contents:
+      - plan_season
+      - grain_plan_table
+  - title: Grain value library
+    desc: >
+      Reusable, documented grain value and loss schedules built from published
+      grade conventions.
+    contents:
+      - wheat_protein_bands
+      - barley_malting_premium
+      - n_rate_economics
+  - title: Result objects
+    desc: The S7 result types and their predicate.
+    contents:
+      - grain_decision
+      - grain_plan
+      - grain_is_grounded
