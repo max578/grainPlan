@@ -18,6 +18,10 @@
 # for a real decision; the defaults exist so an example, a test, or a first
 # pass runs without a price sheet to hand. References are named in the docs.
 
+# -----------------------------------------------------------------------------
+# Schedule input validation
+# -----------------------------------------------------------------------------
+
 # Validate that a vector of band breaks is usable as a grade-band schedule:
 # numeric, non-empty, strictly increasing, no NA. Delegated to a named helper so
 # each library schedule reads as its economic intent, not a wall of checks
@@ -32,6 +36,10 @@
   }
   invisible(TRUE)
 }
+
+# -----------------------------------------------------------------------------
+# Value / loss schedules
+# -----------------------------------------------------------------------------
 
 #' Wheat protein-band value schedule
 #'

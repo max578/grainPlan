@@ -82,6 +82,10 @@ plan_season <- function(decisions, crop = NULL, season = "season",
     metadata           = metadata)
 }
 
+# -----------------------------------------------------------------------------
+# Internal: decision-list validation
+# -----------------------------------------------------------------------------
+
 # Validate that every element of the supplied list is a grain_decision, the
 # single precondition plan_season relies on. Named so plan_season's body reads
 # as its intent (r_style invariant 9).
@@ -98,6 +102,10 @@ plan_season <- function(decisions, crop = NULL, season = "season",
   }
   invisible(TRUE)
 }
+
+# -----------------------------------------------------------------------------
+# Plan reporting
+# -----------------------------------------------------------------------------
 
 #' Summarise a grain plan as a data frame
 #'
