@@ -94,3 +94,111 @@ test_that("plan_variety validates inputs", {
   expect_error(plan_variety(merit, incumbent = "nope"),
                "not one of the candidate")
 })
+
+test_that("plan_variety(constraint = none-feasible) abstains via no_feasible_action", {
+  merit <- .fixture_merit_draws(means = c(5.2, 5.8, 4.9, 5.3), sd = 0.2)
+  gd <- plan_variety(merit, c("Scepter", "Vixen", "Calibre", "Denison"),
+                     incumbent = "Scepter",
+                     grounding = decideR::grounding_grounded(),
+                     constraint = function(action) FALSE)
+  expect_true(gd@abstained)
+  expect_equal(gd@decision@abstain_reason, "no_feasible_action")
+  expect_equal(gd@action, "Scepter")
+  expect_match(gd@rationale, "no variety is feasible")
+})
+
+test_that("the decide() shim computes the correct expected merit (independent check)", {
+  # F2 guard: grainPlan feeds a pre-built utility matrix through decideR::decide()
+  # with `draws` used for length only. This independently recomputes the
+  # downside-aware merit from first principles and asserts the candidate ledger's
+  # expected utilities match, so a future decideR change that read `draws` values
+  # would break this test rather than silently mis-decide in the field.
+  set.seed(21L)
+  merit <- cbind(A = stats::rnorm(3000L, 5.0, 0.4),
+                 B = stats::rnorm(3000L, 5.3, 0.4))
+  ra <- 0.5
+  centres <- colMeans(merit)
+  u <- vapply(seq_len(ncol(merit)),
+              function(j) merit[, j] - ra * pmax(centres[j] - merit[, j], 0),
+              numeric(nrow(merit)))
+  expected <- colMeans(u)
+
+  gd <- plan_variety(merit, risk_aversion = ra, decisive_prob = 0.2,
+                     grounding = decideR::grounding_grounded())
+  led <- gd@decision@candidates
+  expect_equal(led$expected_utility[order(led$action)], unname(expected),
+               tolerance = 1e-9)
+})
+
+# -- F1: point-GEBV uncertainty is resolved from the manifest, never fabricated --
+
+test_that("point GEBVs use the manifest PEV when the caller supplies no gebv_sd", {
+  gebv <- c(g1 = 0.2, g2 = 1.1, g3 = -0.3, g4 = 0.5)
+  m <- .mini_manifest(
+    outputs  = list(gebv = gebv, pev = c(0.04, 0.04, 0.04, 0.04)),
+    metadata = list(grounding = decideR::grounding_grounded()))
+  set.seed(3L)
+  gd <- plan_variety_from_manifest(m, risk_aversion = 0.5)
+  expect_equal(gd@action, "g2")
+  expect_equal(gd@context$gebv_sd_source, "manifest_pev")
+  expect_true(isTRUE(gd@context$reconstructed_posterior))
+})
+
+test_that("point GEBVs use a manifest reliability plus genetic variance", {
+  gebv <- c(g1 = 0.2, g2 = 1.1, g3 = -0.3, g4 = 0.5)
+  m <- .mini_manifest(
+    outputs  = list(gebv = gebv, reliability = c(0.9, 0.9, 0.9, 0.9)),
+    metadata = list(grounding = decideR::grounding_grounded(),
+                    genetic_var = 0.16))
+  set.seed(3L)
+  gd <- plan_variety_from_manifest(m, risk_aversion = 0.5)
+  expect_equal(gd@context$gebv_sd_source, "manifest_reliability")
+  expect_false(gd@abstained)
+})
+
+test_that("point GEBVs with no uncertainty and no caller gebv_sd is an error", {
+  gebv <- c(g1 = 0.2, g2 = 1.1, g3 = -0.3, g4 = 0.5)
+  m <- .fixture_gebv_manifest(gebv, decideR::grounding_grounded())
+  expect_error(plan_variety_from_manifest(m, risk_aversion = 0.5),
+               "will not fabricate")
+})
+
+test_that("an explicit caller gebv_sd is recorded as the source and wins", {
+  gebv <- c(g1 = 0.2, g2 = 1.1, g3 = -0.3, g4 = 0.5)
+  m <- .mini_manifest(
+    outputs  = list(gebv = gebv, pev = c(0.04, 0.04, 0.04, 0.04)),
+    metadata = list(grounding = decideR::grounding_grounded()))
+  set.seed(3L)
+  gd <- plan_variety_from_manifest(m, risk_aversion = 0.5, gebv_sd = 0.2)
+  expect_equal(gd@context$gebv_sd_source, "caller")
+})
+
+test_that("the reconstruction SD scale drives decide-vs-abstain (no hidden default)", {
+  # Two caller SDs straddling the decisiveness threshold flip the decision: a
+  # tight posterior decides the leading genotype, a broad one abstains to the
+  # incumbent. This is exactly the dependence F1 makes explicit instead of hiding
+  # behind gebv_sd = 1.
+  gebv <- c(g1 = 0, g2 = 0.6)
+  m <- .fixture_gebv_manifest(gebv, decideR::grounding_grounded())
+
+  set.seed(101L)
+  tight <- plan_variety_from_manifest(m, risk_aversion = 0, incumbent = "g1",
+                                      gebv_sd = 0.1, n_draws = 4000L,
+                                      decisive_prob = 0.6)
+  set.seed(101L)
+  broad <- plan_variety_from_manifest(m, risk_aversion = 0, incumbent = "g1",
+                                      gebv_sd = 3.0, n_draws = 4000L,
+                                      decisive_prob = 0.6)
+  expect_false(tight@abstained)
+  expect_equal(tight@action, "g2")
+  expect_true(broad@abstained)
+  expect_equal(broad@action, "g1")
+})
+
+test_that("a manifest with no grounding token anywhere reads as unverified", {
+  # F3 guard: exercise the grounding-token reader's honest fallback directly.
+  gebv <- c(g1 = 0.2, g2 = 1.1)
+  m <- .mini_manifest(outputs = list(gebv = gebv))   # no grounding set
+  gd <- plan_variety_from_manifest(m, gebv_sd = 0.2)
+  expect_false(grain_is_grounded(gd))
+})

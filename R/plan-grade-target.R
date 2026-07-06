@@ -114,6 +114,10 @@ plan_grade_target <- function(quality_draws, actions, value,
   .wrap_grade_decision(d, crop = crop, context = context)
 }
 
+# -----------------------------------------------------------------------------
+# Internal: decision-to-grain wrapper
+# -----------------------------------------------------------------------------
+
 # Lift a decideR grade-target `decision` into a grain_decision, copying the
 # grounding straight off the wrapped decision and composing a grower-facing
 # rationale that names the threshold economics at work.
@@ -122,15 +126,10 @@ plan_grade_target <- function(quality_draws, actions, value,
 .wrap_grade_decision <- function(d, crop, context) {
   grounding <- .decision_grounding(d)
   if (isTRUE(d@abstained)) {
-    rationale <- switch(
-      d@abstain_reason,
-      input_ungrounded = paste0(
-        "Held at the status-quo input: the quality evidence is unverified, ",
-        "so the firewall declines to chase a grade on it."),
-      insufficient_evidence = paste0(
-        "Held at the status-quo input: lifting the input does not clearly ",
-        "improve the graded payoff on the posterior."),
-      sprintf("Held at the status-quo input (%s).", d@abstain_reason))
+    rationale <- .abstain_rationale(
+      d@abstain_reason, lead = "Held at the status-quo input",
+      evidence = "the quality evidence", subject = "input level",
+      act = "chase a grade on it")
   } else {
     rationale <- sprintf(
       paste0("Set the input to %g for the %s crop: it maximises the expected ",

@@ -11,6 +11,10 @@
 # yield-draws matrix, and an upstream `orchestra_manifest` -- both routed to the
 # same decideR engine so the firewall behaves identically on either.
 
+# -----------------------------------------------------------------------------
+# Internal: decision-to-grain wrapper
+# -----------------------------------------------------------------------------
+
 # Lift a decideR `decision` into a grain_decision, copying the grounding token
 # straight off the wrapped decision (never recomputing it) and composing the
 # grower-facing rationale from the decision's own abstention record. Shared by
@@ -18,18 +22,9 @@
 .wrap_rate_decision <- function(d, crop, rates, economics, context) {
   grounding <- .decision_grounding(d)
   if (isTRUE(d@abstained)) {
-    rationale <- switch(
-      d@abstain_reason,
-      input_ungrounded = paste0(
-        "Held at the status-quo rate: the yield evidence is unverified, ",
-        "so the Independent Oracle Principle firewall declines to act on it."),
-      insufficient_evidence = paste0(
-        "Held at the status-quo rate: no candidate rate is clearly more ",
-        "profitable than the status quo on the posterior."),
-      no_feasible_action = "Held at the status-quo rate: no rate is feasible.",
-      low_ess = paste0("Held at the status-quo rate: too few effective draws ",
-                       "to decide."),
-      sprintf("Held at the status-quo rate (%s).", d@abstain_reason))
+    rationale <- .abstain_rationale(
+      d@abstain_reason, lead = "Held at the status-quo rate",
+      evidence = "the yield evidence", subject = "rate", act = "act on it")
   } else {
     rationale <- sprintf(
       paste0("Apply %g %s to the %s crop: it maximises expected profit ",
@@ -48,6 +43,10 @@
     rationale = rationale,
     context   = context)
 }
+
+# -----------------------------------------------------------------------------
+# Decision verbs
+# -----------------------------------------------------------------------------
 
 #' Plan a nitrogen rate for a grain crop
 #'
@@ -136,6 +135,9 @@ plan_nitrogen_rate <- function(yield_draws, rates, price_grain, price_n,
 #' The grounding rides from the producer through the decision: an unverified
 #' yield manifest forces the status-quo rate. grainPlan takes no dependency on
 #' the manifest constructor; the manifest is read by decideR's duck-typed tail.
+#' A caller who has independently grounded (or wants to force `[unverified]` on)
+#' a manifest can override the producer's token through `grounding`, matching
+#' [plan_variety_from_manifest()].
 #'
 #' @param manifest An `orchestra_manifest` carrying a yield-per-rate draws
 #'   matrix (in `outputs` or `metadata$yield_draws`), one column per rate.
@@ -144,6 +146,8 @@ plan_nitrogen_rate <- function(yield_draws, rates, price_grain, price_n,
 #' @param price_grain The grain price per unit yield.
 #' @param price_n The nitrogen price per unit rate.
 #' @param crop The crop the decision concerns (default `"wheat"`).
+#' @param grounding Optional override for the manifest's own grounding token;
+#'   `NULL` (default) uses the token the manifest carries, read worst-case.
 #' @param safe_rate The fallback rate on abstention (default `0`).
 #' @param decisive_prob Minimum posterior probability that the leading rate
 #'   beats the status quo.
@@ -168,14 +172,18 @@ plan_nitrogen_rate <- function(yield_draws, rates, price_grain, price_n,
 #' @export
 plan_nitrogen_rate_from_manifest <- function(manifest, rates, price_grain,
                                              price_n, crop = "wheat",
-                                             safe_rate = 0,
+                                             grounding = NULL, safe_rate = 0,
                                              decisive_prob = 0.6, ...) {
   econ <- n_rate_economics(price_grain = price_grain, price_n = price_n)
 
+  # `grounding = NULL` lets decideR's tail read the manifest's own token; a
+  # non-NULL override is forwarded verbatim, so the two manifest verbs share the
+  # same override semantics.
   d <- decideR::decide_rate_from_manifest(
     manifest = manifest, rates = rates,
     price_grain = econ$price_grain, price_input = econ$price_n,
-    safe_rate = safe_rate, decisive_prob = decisive_prob, ...)
+    grounding = grounding, safe_rate = safe_rate,
+    decisive_prob = decisive_prob, ...)
 
   context <- list(rates = rates, economics = econ,
                   evidence = "orchestra_manifest",

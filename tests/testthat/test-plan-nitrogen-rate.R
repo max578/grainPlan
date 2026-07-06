@@ -75,3 +75,53 @@ test_that("plan_nitrogen_rate validates the draws matrix shape", {
                        price_n = 1),
     "matrix with one column per rate")
 })
+
+test_that("a caller grounding override flips the manifest verb both ways", {
+  # F4: the nitrogen manifest verb now honours a grounding override, matching the
+  # variety manifest verb. Forcing unverified on a grounded manifest abstains;
+  # forcing grounded on an unverified manifest decides.
+  rates <- seq(0, 200, by = 25)
+  yld <- .fixture_yield_draws(rates)
+
+  m_grounded <- .fixture_yield_manifest(yld, decideR::grounding_grounded())
+  forced_off <- plan_nitrogen_rate_from_manifest(
+    m_grounded, rates, price_grain = 350, price_n = 1.3,
+    grounding = decideR::grounding_unverified())
+  expect_true(forced_off@abstained)
+  expect_equal(forced_off@action, 0)
+
+  m_unverified <- .fixture_yield_manifest(yld, decideR::grounding_unverified())
+  forced_on <- plan_nitrogen_rate_from_manifest(
+    m_unverified, rates, price_grain = 350, price_n = 1.3,
+    grounding = decideR::grounding_grounded())
+  expect_false(forced_on@abstained)
+  expect_true(grain_is_grounded(forced_on))
+  expect_true(forced_on@action > 0)
+})
+
+test_that("an effective-sample-size floor abstains via low_ess", {
+  # F6: exercises the low_ess abstention branch and its shared rationale, which
+  # was previously untested at the grain-wrapper layer.
+  rates <- seq(0, 200, by = 25)
+  yld <- .fixture_yield_draws(rates)
+  gd <- plan_nitrogen_rate(yld, rates, price_grain = 350, price_n = 1.3,
+                           grounding = decideR::grounding_grounded(),
+                           min_ess = 1e9)
+  expect_true(gd@abstained)
+  expect_equal(gd@decision@abstain_reason, "low_ess")
+  expect_equal(gd@action, 0)
+  expect_match(gd@rationale, "too few effective draws")
+})
+
+test_that("scaling both prices leaves the recommended rate unchanged", {
+  # F6: a metamorphic invariant on the economics. Profit is linear in the two
+  # prices, so a common positive rescale scales every candidate's expected profit
+  # by the same factor and cannot move the argmax rate.
+  rates <- seq(0, 200, by = 25)
+  yld <- .fixture_yield_draws(rates)
+  base <- plan_nitrogen_rate(yld, rates, price_grain = 300, price_n = 1.2,
+                             grounding = decideR::grounding_grounded())
+  scaled <- plan_nitrogen_rate(yld, rates, price_grain = 900, price_n = 3.6,
+                               grounding = decideR::grounding_grounded())
+  expect_equal(base@action, scaled@action)
+})

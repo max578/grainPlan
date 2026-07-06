@@ -35,14 +35,26 @@ test_that("grain_is_grounded reads the worst-case token", {
   expect_false(grain_is_grounded(unverified))
 })
 
-test_that("print methods emit without error and return invisibly", {
+test_that("print methods emit the expected lines and return invisibly", {
   rates <- seq(0, 150, by = 25)
   yld <- .fixture_yield_draws(rates, n = 600L)
   gd <- plan_nitrogen_rate(yld, rates, price_grain = 350, price_n = 1.3,
                            grounding = decideR::grounding_grounded())
-  expect_output(print(gd), "grain_decision")
-  expect_output(print(gd), "RECOMMENDED")
+  out <- capture.output(print(gd))
+  expect_match(out[1], "<grain_decision> RECOMMENDED\\s+\\[grounded\\]")
+  expect_true(any(grepl("kind\\s+: nitrogen_rate", out)))
+  expect_true(any(grepl("action\\s+:", out)))
+  expect_true(any(grepl("why\\s+:", out)))          # the rationale line prints
+  expect_invisible(print(gd))
+
+  # an abstaining decision prints its ABSTAINED status
+  ab <- plan_nitrogen_rate(yld, rates, price_grain = 350, price_n = 1.3,
+                           grounding = decideR::grounding_unverified())
+  expect_output(print(ab), "ABSTAINED")
+
   plan <- plan_season(list(gd), crop = "wheat", season = "S1")
-  expect_output(print(plan), "grain_plan")
+  out_p <- capture.output(print(plan))
+  expect_match(out_p[1], "<grain_plan> S1 -- 1 decision\\s+\\[grounded\\]")
+  expect_true(any(grepl("nitrogen_rate", out_p)))
   expect_invisible(print(plan))
 })

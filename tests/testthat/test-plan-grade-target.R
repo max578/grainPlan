@@ -67,3 +67,34 @@ test_that("the barley malting schedule drives a grade-target decision", {
   expect_false(gd@abstained)
   expect_equal(gd@action, 40)               # the top-up clears into malting
 })
+
+test_that("a per-unit cost function drives the grade-target decision", {
+  # F6: decideR's grade-band utility accepts a cost function; grainPlan passes it
+  # through. A tiny per-unit cost still leaves a worthwhile lift worthwhile.
+  set.seed(11L)
+  protein <- stats::rnorm(3000L, mean = 11.2, sd = 0.4)
+  v <- wheat_protein_bands()
+  gd <- plan_grade_target(
+    protein, actions = seq(0, 60, by = 10), value = v,
+    quality_shift = function(rate, p) p + 0.05 * rate,
+    cost = function(action) 0.2 * action,
+    crop = "wheat", grounding = decideR::grounding_grounded())
+  expect_equal(gd@kind, "grade_target")
+  expect_false(gd@abstained)
+  expect_true(gd@action > 0)
+})
+
+test_that("plan_grade_target(constraint = none-feasible) abstains via no_feasible_action", {
+  # F6: exercises the no_feasible_action branch and its shared rationale.
+  set.seed(11L)
+  protein <- stats::rnorm(2000L, mean = 11.0, sd = 0.5)
+  v <- wheat_protein_bands()
+  gd <- plan_grade_target(
+    protein, actions = seq(0, 60, by = 10), value = v,
+    quality_shift = function(rate, p) p + 0.03 * rate, cost = 0.5,
+    grounding = decideR::grounding_grounded(),
+    constraint = function(action) FALSE)
+  expect_true(gd@abstained)
+  expect_equal(gd@decision@abstain_reason, "no_feasible_action")
+  expect_match(gd@rationale, "no input level is feasible")
+})

@@ -1,3 +1,43 @@
+# grainPlan 0.1.1
+
+A safety and consistency release. No public function is removed or renamed, but
+the genomic manifest tail changes behaviour in one deliberate way (below).
+
+## Behaviour change
+
+* `plan_variety_from_manifest()` no longer fabricates genomic uncertainty. When a
+  manifest carries point GEBVs, the per-genotype reconstruction standard
+  deviation is now resolved from the manifest itself (a prediction-error variance
+  `pev`, a standard error `gebv_se`, or a `reliability` together with a
+  `genetic_var`) or from an explicit caller `gebv_sd`. The previous silent
+  default of `gebv_sd = 1` is gone: when no uncertainty is available the function
+  now errors rather than let an arbitrary, scale-blind constant decide whether a
+  variety switch fires or abstains. The resolved provenance is recorded in the
+  decision context as `gebv_sd_source`. Callers who already pass `gebv_sd`
+  explicitly are unaffected.
+
+## Improvements
+
+* `plan_nitrogen_rate_from_manifest()` gains a `grounding` override argument,
+  matching `plan_variety_from_manifest()`, so a caller can force a manifest's
+  grounding token either way.
+* Abstention rationales are now exhaustive across every decision verb: all four
+  abstention reasons decideR can emit (ungrounded input, insufficient evidence,
+  no feasible action, too few effective draws) get plain-language, grower-facing
+  phrasing from a single shared helper.
+* Runnable manifest examples and a manifest walkthrough section were added to the
+  vignette, and the README firewall example now executes on render.
+* Added an explicit `R (>= 3.5.0)` floor (the S7 requirement), a minimal
+  continuous-integration check, and an API-stability statement.
+
+## Internal
+
+* Removed an unused null-coalescing helper.
+* Added targeted tests: the reconstruction-scale dependence, the low-effective-
+  sample and no-feasible-action abstention branches, a functional grade-target
+  cost, a nitrogen price-scaling invariant, and an independent verification that
+  the variety decision computes the correct expected merit.
+
 # grainPlan 0.1.0
 
 First release. grainPlan is the grain-specific decision orchestrator of the

@@ -9,7 +9,7 @@ plan_variety_from_manifest(
   genotypes = NULL,
   risk_aversion = 0.5,
   incumbent = NULL,
-  gebv_sd = 1,
+  gebv_sd = NULL,
   n_draws = 1000L,
   crop = "wheat",
   grounding = NULL,
@@ -29,9 +29,12 @@ on the GEBV payload, then to \code{"g1"}, \code{"g2"}, ....}
 \item{incumbent}{The genotype recommended on abstention, or \code{NULL} for the
 first.}
 
-\item{gebv_sd}{The per-genotype GEBV standard deviation used to reconstruct a
-posterior when the manifest carries point GEBVs (a single number or one per
-genotype; default \code{1}); ignored when the payload is a draws matrix.}
+\item{gebv_sd}{Optional per-genotype GEBV standard deviation used to
+reconstruct a posterior from point GEBVs (a single number or one per
+genotype). When \code{NULL} (default) the uncertainty is read from the manifest
+(PEV, standard error, or reliability plus genetic variance); when the
+manifest carries none, supply this rather than let the function guess.
+Ignored when the payload is a draws matrix.}
 
 \item{n_draws}{The number of draws to reconstruct per genotype when the
 payload is point GEBVs (default \code{1000L}).}
@@ -69,12 +72,28 @@ incumbent. grainPlan takes no dependency on the manifest constructor; the
 manifest is read by duck-typed S7 property access, the composition-layer
 convention.
 
-When the manifest carries point GEBVs rather than draws, a posterior is
-reconstructed per genotype from the GEBV and its reliability (a normal with
-the GEBV as mean and \code{gebv_sd} as standard deviation, or a supplied
-per-genotype standard deviation), so the downside-aware loss still has a
-distribution to weigh; this reconstruction is recorded in the decision's
-context and the grounding is unaffected.
+When the manifest carries point GEBVs rather than a draws matrix, the
+downside-aware loss still needs a distribution to weigh, so a per-genotype
+normal posterior is reconstructed with the GEBV as its mean. The standard
+deviation is the genotype's own genomic uncertainty, resolved in this order
+and never fabricated silently:
+\enumerate{
+\item an explicit caller \code{gebv_sd} (a single value or one per genotype) if
+supplied, which always wins;
+\item a per-genotype prediction-error variance on the manifest
+(\code{outputs$pev} or \code{metadata$pev}), used as \eqn{sd_j = \sqrt{PEV_j}};
+\item a per-genotype standard error on the manifest (\code{outputs$gebv_se},
+\code{outputs$se}, or \code{metadata$gebv_sd}), used directly;
+\item a per-genotype reliability (\code{outputs$reliability} or
+\code{metadata$reliability}) together with an additive-genetic variance
+(\code{metadata$genetic_var}), used as \eqn{sd_j = \sqrt{\sigma^2_a\,(1-r^2_j)}}
+from the standard reliability-PEV relation (Mrode, 2014).
+}
+When none of these is available the function stops rather than invent an
+uncertainty scale a point GEBV cannot carry: a genotype switch must not turn
+on a magic constant. The resolved source is recorded in the decision's
+\code{context} as \code{gebv_sd_source}, and the reconstruction never strengthens the
+grounding.
 }
 \examples{
 \dontrun{
@@ -85,6 +104,11 @@ context and the grounding is unaffected.
 # access, so grainPlan needs no dependency on the contract package.
 plan_variety_from_manifest(manifest, risk_aversion = 0.5)
 }
+}
+\references{
+Mrode, R. A. (2014). \emph{Linear Models for the Prediction of Animal
+Breeding Values} (3rd ed.). CABI. The reliability-PEV relation
+\eqn{r^2 = 1 - PEV/\sigma^2_a}.
 }
 \seealso{
 \code{\link[=plan_variety]{plan_variety()}} for the caller-assembled-matrix form.

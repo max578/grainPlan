@@ -13,6 +13,10 @@
 # the firewall and abstention are decideR's. This is the synergy with the
 # flexyBayes genomics targets: a `breeding_values` manifest feeds straight in.
 
+# -----------------------------------------------------------------------------
+# Internal: downside-aware merit utility
+# -----------------------------------------------------------------------------
+
 # Build the downside-aware merit utility for a variety decision. For a candidate
 # variety j, the utility at a draw is the variety's merit on that draw less a
 # risk penalty: `risk_aversion` times the shortfall of the draw below the
@@ -32,6 +36,10 @@
     },
     numeric(nrow(merit_draws)))
 }
+
+# -----------------------------------------------------------------------------
+# Decision verb: matrix entry point
+# -----------------------------------------------------------------------------
 
 #' Plan a variety choice from a multi-environment trial or genomic posterior
 #'
@@ -110,6 +118,14 @@ plan_variety <- function(merit_draws, varieties = NULL, risk_aversion = 0.5,
   # the safe action is the incumbent's index. decideR's engine then applies the
   # grounding firewall and the decisive-versus-incumbent abstention exactly as
   # it does for a numeric rate grid.
+  #
+  # `draws` is passed only for its length (decideR uses it for the draw count and
+  # the default ESS, never for its values, because `utility` ignores `theta` and
+  # indexes the pre-built matrix). This reliance on decideR's internal use of
+  # `draws` is guarded by an independent-verification test (the candidate
+  # ledger's expected utilities must equal colMeans of `util_matrix`), so a
+  # future decideR change that read `draws` values would fail here, not in the
+  # field. The clean fix is an upstream matrix entry point in decideR.
   d <- decideR::decide(
     draws       = util_matrix[, 1L],
     utility     = function(action, theta) util_matrix[, action],
@@ -129,6 +145,10 @@ plan_variety <- function(merit_draws, varieties = NULL, risk_aversion = 0.5,
                   incumbent = varieties[safe_idx], evidence = "merit_draws")
   .wrap_variety_decision(d, variety, crop = crop, context = context)
 }
+
+# -----------------------------------------------------------------------------
+# Internal: variety / incumbent resolution and decision wrapping
+# -----------------------------------------------------------------------------
 
 # Resolve variety names: caller-supplied, else the matrix column names, else a
 # generated v1..vn. Validated to one name per column.
@@ -173,16 +193,11 @@ plan_variety <- function(merit_draws, varieties = NULL, risk_aversion = 0.5,
 .wrap_variety_decision <- function(d, variety, crop, context) {
   grounding <- .decision_grounding(d)
   if (isTRUE(d@abstained)) {
-    rationale <- switch(
+    rationale <- .abstain_rationale(
       d@abstain_reason,
-      input_ungrounded = paste0(
-        "Kept the incumbent variety (", context$incumbent, "): the merit ",
-        "evidence is unverified, so the firewall declines to switch on it."),
-      insufficient_evidence = paste0(
-        "Kept the incumbent variety (", context$incumbent, "): no candidate ",
-        "variety is clearly better on the posterior."),
-      sprintf("Kept the incumbent variety (%s) -- %s.", context$incumbent,
-              d@abstain_reason))
+      lead = sprintf("Kept the incumbent variety (%s)", context$incumbent),
+      evidence = "the merit evidence", subject = "variety",
+      act = "switch on it")
   } else {
     rationale <- sprintf(
       paste0("Sow %s in the %s crop: it leads the downside-aware merit ",
@@ -200,6 +215,10 @@ plan_variety <- function(merit_draws, varieties = NULL, risk_aversion = 0.5,
     rationale = rationale,
     context   = context)
 }
+
+# -----------------------------------------------------------------------------
+# Decision verb: manifest entry point
+# -----------------------------------------------------------------------------
 
 #' Plan a variety choice from a breeding-values manifest
 #'
@@ -220,12 +239,28 @@ plan_variety <- function(merit_draws, varieties = NULL, risk_aversion = 0.5,
 #' manifest is read by duck-typed S7 property access, the composition-layer
 #' convention.
 #'
-#' When the manifest carries point GEBVs rather than draws, a posterior is
-#' reconstructed per genotype from the GEBV and its reliability (a normal with
-#' the GEBV as mean and `gebv_sd` as standard deviation, or a supplied
-#' per-genotype standard deviation), so the downside-aware loss still has a
-#' distribution to weigh; this reconstruction is recorded in the decision's
-#' context and the grounding is unaffected.
+#' When the manifest carries point GEBVs rather than a draws matrix, the
+#' downside-aware loss still needs a distribution to weigh, so a per-genotype
+#' normal posterior is reconstructed with the GEBV as its mean. The standard
+#' deviation is the genotype's own genomic uncertainty, resolved in this order
+#' and never fabricated silently:
+#' \enumerate{
+#'   \item an explicit caller `gebv_sd` (a single value or one per genotype) if
+#'     supplied, which always wins;
+#'   \item a per-genotype prediction-error variance on the manifest
+#'     (`outputs$pev` or `metadata$pev`), used as \eqn{sd_j = \sqrt{PEV_j}};
+#'   \item a per-genotype standard error on the manifest (`outputs$gebv_se`,
+#'     `outputs$se`, or `metadata$gebv_sd`), used directly;
+#'   \item a per-genotype reliability (`outputs$reliability` or
+#'     `metadata$reliability`) together with an additive-genetic variance
+#'     (`metadata$genetic_var`), used as \eqn{sd_j = \sqrt{\sigma^2_a\,(1-r^2_j)}}
+#'     from the standard reliability-PEV relation (Mrode, 2014).
+#' }
+#' When none of these is available the function stops rather than invent an
+#' uncertainty scale a point GEBV cannot carry: a genotype switch must not turn
+#' on a magic constant. The resolved source is recorded in the decision's
+#' `context` as `gebv_sd_source`, and the reconstruction never strengthens the
+#' grounding.
 #'
 #' @param manifest A `breeding_values` `orchestra_manifest` (or any S7 object
 #'   exposing `outputs` and `metadata` with a `gebv` payload).
@@ -234,9 +269,12 @@ plan_variety <- function(merit_draws, varieties = NULL, risk_aversion = 0.5,
 #' @param risk_aversion A non-negative downside-penalty weight (default `0.5`).
 #' @param incumbent The genotype recommended on abstention, or `NULL` for the
 #'   first.
-#' @param gebv_sd The per-genotype GEBV standard deviation used to reconstruct a
-#'   posterior when the manifest carries point GEBVs (a single number or one per
-#'   genotype; default `1`); ignored when the payload is a draws matrix.
+#' @param gebv_sd Optional per-genotype GEBV standard deviation used to
+#'   reconstruct a posterior from point GEBVs (a single number or one per
+#'   genotype). When `NULL` (default) the uncertainty is read from the manifest
+#'   (PEV, standard error, or reliability plus genetic variance); when the
+#'   manifest carries none, supply this rather than let the function guess.
+#'   Ignored when the payload is a draws matrix.
 #' @param n_draws The number of draws to reconstruct per genotype when the
 #'   payload is point GEBVs (default `1000L`).
 #' @param crop The crop the decision concerns (default `"wheat"`).
@@ -245,6 +283,9 @@ plan_variety <- function(merit_draws, varieties = NULL, risk_aversion = 0.5,
 #' @param decisive_prob Minimum posterior probability that the leading genotype
 #'   beats the incumbent.
 #' @param ... Further arguments passed to [plan_variety()].
+#' @references Mrode, R. A. (2014). *Linear Models for the Prediction of Animal
+#'   Breeding Values* (3rd ed.). CABI. The reliability-PEV relation
+#'   \eqn{r^2 = 1 - PEV/\sigma^2_a}.
 #' @return A [grain_decision] of kind `"variety"` whose `action` is the
 #'   recommended genotype name.
 #' @examples
@@ -261,7 +302,7 @@ plan_variety <- function(merit_draws, varieties = NULL, risk_aversion = 0.5,
 #' @export
 plan_variety_from_manifest <- function(manifest, genotypes = NULL,
                                        risk_aversion = 0.5, incumbent = NULL,
-                                       gebv_sd = 1, n_draws = 1000L,
+                                       gebv_sd = NULL, n_draws = 1000L,
                                        crop = "wheat", grounding = NULL,
                                        decisive_prob = 0.6, ...) {
   payload <- .manifest_gebv(manifest)
@@ -271,10 +312,13 @@ plan_variety_from_manifest <- function(manifest, genotypes = NULL,
     merit_draws <- payload
     names_in <- colnames(payload)
     reconstructed <- FALSE
+    sd_source <- NA_character_
   } else {
-    merit_draws <- .gebv_draws_from_points(payload, gebv_sd, n_draws)
+    unc <- .resolve_gebv_uncertainty(manifest, payload, gebv_sd)
+    merit_draws <- .gebv_draws_from_points(payload, unc$sd, n_draws)
     names_in <- names(payload)
     reconstructed <- TRUE
+    sd_source <- unc$source
   }
   if (is.null(genotypes)) {
     genotypes <- names_in
@@ -286,9 +330,14 @@ plan_variety_from_manifest <- function(manifest, genotypes = NULL,
     grounding = g, decisive_prob = decisive_prob, ...)
   gd@context <- c(gd@context,
                   list(evidence = "breeding_values manifest",
-                       reconstructed_posterior = reconstructed))
+                       reconstructed_posterior = reconstructed,
+                       gebv_sd_source = sd_source))
   gd
 }
+
+# -----------------------------------------------------------------------------
+# Internal: duck-typed manifest accessors
+# -----------------------------------------------------------------------------
 
 # Read the GEBV payload off a breeding_values manifest by duck-typed S7 property
 # access -- no dependency on the contract class. Returns the numeric vector or
@@ -317,24 +366,123 @@ plan_variety_from_manifest <- function(manifest, genotypes = NULL,
   out
 }
 
-# Reconstruct a per-genotype posterior from point GEBVs and a reliability
-# standard deviation, so the downside-aware loss has a distribution to weigh.
-# Deterministic given the session seed; the reconstruction is flagged in the
-# decision context, never as a stronger grounding.
+# Reconstruct a per-genotype posterior from point GEBVs and a resolved
+# per-genotype standard-deviation vector, so the downside-aware loss has a
+# distribution to weigh. Deterministic given the session seed; the
+# reconstruction is flagged in the decision context, never as a stronger
+# grounding.
 #
 # @noRd
-.gebv_draws_from_points <- function(gebv, gebv_sd, n_draws) {
+.gebv_draws_from_points <- function(gebv, sds, n_draws) {
   n_g <- length(gebv)
-  sds <- if (length(gebv_sd) == 1L) rep(gebv_sd, n_g) else gebv_sd
-  if (length(sds) != n_g || any(sds < 0)) {
-    stop("`gebv_sd` must be one non-negative number or one per genotype",
-         call. = FALSE)
-  }
   draws <- vapply(seq_len(n_g),
                   function(j) stats::rnorm(n_draws, gebv[j], sds[j]),
                   numeric(n_draws))
   colnames(draws) <- names(gebv)
   draws
+}
+
+# Resolve the per-genotype GEBV standard deviation used to reconstruct a
+# posterior from point GEBVs, and name its provenance, so a genotype switch is
+# never driven by a fabricated, scale-blind default (the failure the review's F1
+# flags). Precedence: an explicit caller `gebv_sd` wins; otherwise the manifest's
+# own genomic uncertainty is used -- PEV first (as sqrt), then a standard error,
+# then a reliability plus additive-genetic variance via the reliability-PEV
+# relation. When the manifest carries none and the caller supplied none, stop
+# rather than invent uncertainty. Returns `list(sd = <n_g vector>, source = ...)`.
+#
+# @noRd
+.resolve_gebv_uncertainty <- function(manifest, gebv, gebv_sd) {
+  n_g <- length(gebv)
+
+  if (!is.null(gebv_sd)) {
+    return(list(sd = .validate_gebv_sd(gebv_sd, n_g, "gebv_sd"),
+                source = "caller"))
+  }
+
+  pev <- .manifest_numeric(manifest, c("pev", "gebv_pev"))
+  if (!is.null(pev)) {
+    return(list(sd = .validate_gebv_sd(sqrt(.nonneg(pev, "pev")), n_g, "pev"),
+                source = "manifest_pev"))
+  }
+
+  se <- .manifest_numeric(manifest, c("gebv_se", "se", "gebv_sd"))
+  if (!is.null(se)) {
+    return(list(sd = .validate_gebv_sd(se, n_g, "gebv_se"),
+                source = "manifest_se"))
+  }
+
+  rel <- .manifest_numeric(manifest, c("reliability", "r2"))
+  gvar <- .manifest_scalar(manifest, c("genetic_var", "genetic_variance",
+                                       "var_g"))
+  if (!is.null(rel) && !is.null(gvar)) {
+    if (any(rel < 0 | rel > 1)) {
+      stop("`reliability` must lie in [0, 1]", call. = FALSE)
+    }
+    pev_from_rel <- .nonneg(gvar, "genetic_var") * (1 - rel)
+    return(list(sd = .validate_gebv_sd(sqrt(pev_from_rel), n_g,
+                                       "reliability-derived SD"),
+                source = "manifest_reliability"))
+  }
+
+  stop(paste0(
+    "manifest carries point GEBVs with no per-genotype uncertainty ",
+    "(`pev`, `gebv_se`, or `reliability` + `genetic_var`) and `gebv_sd` was ",
+    "not supplied. Pass `gebv_sd` on the GEBV scale, or provide a manifest ",
+    "that carries the genomic uncertainty -- grainPlan will not fabricate it."),
+    call. = FALSE)
+}
+
+# Coerce a resolved SD to one non-negative value per genotype (recycling a single
+# value), with a message naming its origin.
+#
+# @noRd
+.validate_gebv_sd <- function(sd, n_g, what) {
+  sds <- if (length(sd) == 1L) rep(sd, n_g) else sd
+  if (length(sds) != n_g || anyNA(sds) || any(sds < 0)) {
+    stop(sprintf(
+      "`%s` must be one non-negative number or one per genotype (need %d)",
+      what, n_g), call. = FALSE)
+  }
+  sds
+}
+
+# Guard a numeric vector or scalar to be non-negative, returning it unchanged.
+#
+# @noRd
+.nonneg <- function(x, what) {
+  if (any(x < 0)) {
+    stop(sprintf("`%s` must be non-negative", what), call. = FALSE)
+  }
+  x
+}
+
+# Read a per-genotype numeric vector off a manifest, trying each candidate key in
+# `outputs` then `metadata`, and returning the first that resolves to a numeric
+# vector (or NULL when none does). Mirrors the duck-typed reads the GEBV and
+# grounding accessors use.
+#
+# @noRd
+.manifest_numeric <- function(m, keys) {
+  outputs <- .manifest_prop(m, "outputs", default = NULL)
+  meta <- .manifest_prop(m, "metadata", default = list())
+  for (k in keys) {
+    v <- if (is.list(outputs)) outputs[[k]] else NULL
+    if (is.null(v) && is.list(meta)) v <- meta[[k]]
+    if (!is.null(v) && is.numeric(v) && !is.matrix(v)) {
+      return(as.numeric(v))
+    }
+  }
+  NULL
+}
+
+# Read a single numeric scalar off a manifest (first matching key in `outputs`
+# then `metadata`), or NULL when none is a length-one numeric.
+#
+# @noRd
+.manifest_scalar <- function(m, keys) {
+  v <- .manifest_numeric(m, keys)
+  if (!is.null(v) && length(v) == 1L) v else NULL
 }
 
 # Read a named property off an S7 manifest without a hard contract dependency,

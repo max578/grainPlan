@@ -10,6 +10,7 @@ plan_nitrogen_rate_from_manifest(
   price_grain,
   price_n,
   crop = "wheat",
+  grounding = NULL,
   safe_rate = 0,
   decisive_prob = 0.6,
   ...
@@ -27,6 +28,9 @@ the manifest's draws matrix.}
 \item{price_n}{The nitrogen price per unit rate.}
 
 \item{crop}{The crop the decision concerns (default \code{"wheat"}).}
+
+\item{grounding}{Optional override for the manifest's own grounding token;
+\code{NULL} (default) uses the token the manifest carries, read worst-case.}
 
 \item{safe_rate}{The fallback rate on abstention (default \code{0}).}
 
@@ -55,6 +59,9 @@ depending on the contract package.
 The grounding rides from the producer through the decision: an unverified
 yield manifest forces the status-quo rate. grainPlan takes no dependency on
 the manifest constructor; the manifest is read by decideR's duck-typed tail.
+A caller who has independently grounded (or wants to force \verb{[unverified]} on)
+a manifest can override the producer's token through \code{grounding}, matching
+\code{\link[=plan_variety_from_manifest]{plan_variety_from_manifest()}}.
 }
 \examples{
 \dontrun{

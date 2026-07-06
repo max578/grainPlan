@@ -15,6 +15,11 @@ knitr::opts_chunk$set(
 
 # grainPlan
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/max578/grainPlan/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/max578/grainPlan/actions/workflows/R-CMD-check.yaml)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- badges: end -->
+
 grainPlan is the grain-specific decision orchestrator of the ORCHESTRA
 agricultural analytics stack -- the practitioner last-mile that turns an
 upstream member's inference result into an actionable grain-production plan.
@@ -57,7 +62,7 @@ on unverified evidence abstains to the status quo. This is the inherited
 Independent Oracle Principle firewall -- a grain decision is never minted on a
 fact the upstream producer did not ground.
 
-```{r firewall, eval = FALSE}
+```{r firewall}
 library(grainPlan)
 
 set.seed(1L)
@@ -82,6 +87,21 @@ grainPlan is a member of the ORCHESTRA federation: it consumes the
 `orchestra_manifest` contract through decideR's duck-typed tail and depends only
 on decideR (the orchestra DAG stays acyclic, with grainPlan a leaf at the
 decision tail). See `CONSTELLATION_MEMBER.md` for the full roster.
+
+## API stability
+
+grainPlan is a small but consequential API: the meaning of a recommendation, an
+abstention, and a grounding token can drive a paddock decision. While the
+package is on a `0.x` series it follows a conservative stability rule.
+
+* Grounding-token semantics, abstention semantics, and the public return classes
+  (`grain_decision`, `grain_plan`) do not change silently.
+* New capabilities are added in a backward-compatible way where possible; new
+  fields may appear on the result objects and their `context` / `metadata`.
+* A behaviour change that could alter a recommendation is called out in
+  `NEWS.md` (as the v0.1.1 point-GEBV uncertainty change was).
+* A function or argument slated for removal gets at least one release carrying a
+  deprecation warning first.
 
 ## Licence
 

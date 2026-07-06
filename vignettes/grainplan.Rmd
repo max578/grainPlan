@@ -185,6 +185,11 @@ that rests on any unverified decision is itself unverified, the firewall applied
 one level up. A plan with a declined component is flagged so a report never reads
 a confident headline over it.
 
+The nitrogen and variety decisions above come from two separate public trials,
+composed here only to show the orchestrator mechanics. In a real season the
+decisions would share one crop and field; the plan labels the crop explicitly so
+the composition is always unambiguous.
+
 ```{r season, eval = have_agridat}
 season <- plan_season(
   list(v_plan, n_plan),
@@ -202,6 +207,57 @@ carries the worst case -- so a grower, or a downstream automation, can gate on
 ```{r gate, eval = have_agridat}
 grain_is_grounded(season)
 ```
+
+## From an upstream manifest
+
+The examples so far assembled the yield and merit posteriors by hand. In the
+orchestra, an upstream member emits an `orchestra_manifest` instead, and grainPlan
+reads it directly. The manifest is read by its public S7 contract, so any object
+that exposes the contract's properties works. Here is a minimal stand-in built
+from a tiny S7 class, standing for the manifest a real producer would emit.
+
+```{r manifest-mini}
+mini_manifest <- S7::new_class(
+  "mini_manifest",
+  properties = list(
+    outputs         = S7::class_any,
+    metadata        = S7::class_list,
+    run_id          = S7::class_character,
+    emitter_package = S7::class_character))
+
+# A yield-per-rate draws matrix, the shape a PESTO inversion emits, carried in
+# `outputs` with the producer's grounding token in `metadata$grounding`.
+rates_m <- seq(0, 150, by = 25)
+ymax    <- stats::rnorm(1200L, 5.5, 0.3)
+yld_m   <- vapply(rates_m,
+                  function(r) 3 + (ymax - 3) * (1 - exp(-r / 80)),
+                  numeric(1200L))
+ym <- mini_manifest(outputs = yld_m,
+                    metadata = list(grounding = decideR::grounding_grounded()))
+
+plan_nitrogen_rate_from_manifest(ym, rates_m, price_grain = 350, price_n = 1.3,
+                                 crop = "wheat")
+```
+
+The genomic tail reads breeding values the same way. A `breeding_values`
+manifest carries point GEBVs in `outputs$gebv` alongside their genomic
+uncertainty, so the reconstruction uses the genotypes' own reliability rather
+than an invented spread.
+
+```{r manifest-gebv}
+gm <- mini_manifest(
+  outputs  = list(gebv = c(Scepter = 0.2, Vixen = 1.1, Calibre = -0.3),
+                  pev  = c(0.04, 0.04, 0.04)),
+  metadata = list(grounding = decideR::grounding_grounded()))
+
+g_dec <- plan_variety_from_manifest(gm, risk_aversion = 0.5)
+g_dec
+g_dec@context$gebv_sd_source
+```
+
+If a point-GEBV manifest carried no uncertainty and no `gebv_sd` were supplied,
+grainPlan would stop rather than fabricate a scale for the reconstruction: a
+genotype switch must not turn on a magic constant.
 
 ## Where this sits in the orchestra
 

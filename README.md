@@ -3,6 +3,13 @@
 
 # grainPlan
 
+<!-- badges: start -->
+
+[![R-CMD-check](https://github.com/max578/grainPlan/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/max578/grainPlan/actions/workflows/R-CMD-check.yaml)
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- badges: end -->
+
 grainPlan is the grain-specific decision orchestrator of the ORCHESTRA
 agricultural analytics stack – the practitioner last-mile that turns an
 upstream member’s inference result into an actionable grain-production
@@ -60,11 +67,21 @@ yld   <- vapply(mu, function(m) rnorm(1500L, m, 0.3), numeric(1500L))
 plan_nitrogen_rate(yld, rates, price_grain = 350, price_n = 1.3,
                    crop = "wheat",
                    grounding = decideR::grounding_grounded())
+#> <grain_decision> RECOMMENDED  [grounded]
+#>   crop   : wheat
+#>   kind   : nitrogen_rate
+#>   action : 175 kg N/ha
+#>   why    : Apply 175 kg N/ha to the wheat crop: it maximises expected profit ($1596.9/unit area) and clearly beats the status quo on the posterior.
 
 # the SAME draws, unverified -> abstain to the status quo
 plan_nitrogen_rate(yld, rates, price_grain = 350, price_n = 1.3,
                    crop = "wheat",
                    grounding = decideR::grounding_unverified())
+#> <grain_decision> ABSTAINED  [[unverified]]
+#>   crop   : wheat
+#>   kind   : nitrogen_rate
+#>   action : 0 kg N/ha
+#>   why    : Held at the status-quo rate: the yield evidence is unverified, so the Independent Oracle Principle firewall declines to act on it.
 ```
 
 ## The orchestra
@@ -74,6 +91,23 @@ grainPlan is a member of the ORCHESTRA federation: it consumes the
 depends only on decideR (the orchestra DAG stays acyclic, with grainPlan
 a leaf at the decision tail). See `CONSTELLATION_MEMBER.md` for the full
 roster.
+
+## API stability
+
+grainPlan is a small but consequential API: the meaning of a
+recommendation, an abstention, and a grounding token can drive a paddock
+decision. While the package is on a `0.x` series it follows a
+conservative stability rule.
+
+- Grounding-token semantics, abstention semantics, and the public return
+  classes (`grain_decision`, `grain_plan`) do not change silently.
+- New capabilities are added in a backward-compatible way where
+  possible; new fields may appear on the result objects and their
+  `context` / `metadata`.
+- A behaviour change that could alter a recommendation is called out in
+  `NEWS.md` (as the v0.1.1 point-GEBV uncertainty change was).
+- A function or argument slated for removal gets at least one release
+  carrying a deprecation warning first.
 
 ## Licence
 
