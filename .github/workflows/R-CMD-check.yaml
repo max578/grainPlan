@@ -1,8 +1,11 @@
 # Slim single-job R-CMD-check for grainPlan.
 # One OS, R release, to keep Actions minutes bounded on a dev repo. decideR is a
 # GitHub-only dependency (DESCRIPTION `Remotes: max578/decideR`), installed by
-# setup-r-dependencies. Expand to a 3-OS x 3-R matrix only when targeting CRAN /
-# rOpenSci. Workflow derived from r-lib/actions examples.
+# setup-r-dependencies. decideR lives in a PRIVATE sibling repo, which the default
+# repo-scoped GITHUB_TOKEN cannot read, so GITHUB_PAT uses a cross-repo read
+# secret (GH_PAT) when present and falls back to the default token otherwise.
+# Expand to a 3-OS x 3-R matrix only when targeting CRAN / rOpenSci. Workflow
+# derived from r-lib/actions examples.
 on:
   push:
     branches: [main, master]
@@ -16,7 +19,7 @@ jobs:
   R-CMD-check:
     runs-on: ubuntu-latest
     env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_PAT: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
     steps:
       - uses: actions/checkout@v4
