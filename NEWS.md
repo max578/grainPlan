@@ -27,8 +27,8 @@ the genomic manifest tail changes behaviour in one deliberate way (below).
   phrasing from a single shared helper.
 * Runnable manifest examples and a manifest walkthrough section were added to the
   vignette, and the README firewall example now executes on render.
-* Added an explicit `R (>= 3.5.0)` floor (the S7 requirement), a minimal
-  continuous-integration check, and an API-stability statement.
+* Added an explicit `R (>= 3.5.0)` floor (the S7 requirement) and an
+  API-stability statement.
 
 ## Internal
 
