@@ -23,22 +23,27 @@
 
 # A minimal S7 manifest-shaped class. It exposes exactly the properties
 # decideR's duck-typed tail and grainPlan's variety tail read -- `outputs`,
-# `metadata`, `run_id`, `emitter_package` -- and nothing else, so a test proves
-# the tail reads any conforming S7 object by its public contract.
+# `metadata`, `run_id`, `emitter_package`, and the contract v1.1 `summary`
+# slot (`manifest_summary(headline, abstained, metrics)`) -- and nothing else,
+# so a test proves the tail reads any conforming S7 object by its public
+# contract.
 .mini_manifest <- S7::new_class(
   "mini_manifest",
   properties = list(
     outputs         = S7::new_property(S7::class_any, default = NULL),
     metadata        = S7::new_property(S7::class_list, default = list()),
     run_id          = S7::new_property(S7::class_character, default = "run-1"),
-    emitter_package = S7::new_property(S7::class_character, default = "test")))
+    emitter_package = S7::new_property(S7::class_character, default = "test"),
+    summary         = S7::new_property(S7::class_any, default = NULL)))
 
-.fixture_yield_manifest <- function(yield_draws, grounding) {
+.fixture_yield_manifest <- function(yield_draws, grounding, summary = NULL) {
   .mini_manifest(outputs = yield_draws,
-                 metadata = list(grounding = grounding))
+                 metadata = list(grounding = grounding),
+                 summary = summary)
 }
 
-.fixture_gebv_manifest <- function(gebv, grounding) {
+.fixture_gebv_manifest <- function(gebv, grounding, summary = NULL) {
   .mini_manifest(outputs = list(gebv = gebv),
-                 metadata = list(grounding = grounding))
+                 metadata = list(grounding = grounding),
+                 summary = summary)
 }
