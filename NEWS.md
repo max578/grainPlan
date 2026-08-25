@@ -1,3 +1,25 @@
+# grainPlan (development version)
+
+## Bug fixes
+
+* `plan_nitrogen_rate()` now errors on a `constraint` argument, which
+  `decideR::decide_input_rate()` silently dropped (it honours only
+  `min_ess`/`ess` out of `...`) -- a caller capping the candidate rate set saw
+  the cap vanish with no warning (GP-02).
+* `plan_nitrogen_rate_from_manifest()` and `plan_variety_from_manifest()` now
+  check two manifest-contract obligations before pricing draws: a producer's
+  own typed abstention (`summary$abstained`, contract v1.1) forces the
+  status-quo action instead of a confident recommendation (GP-03), and a
+  declared `inferential_target` other than one the verb is built to price
+  does the same (GP-04). Both previously rode straight through to a priced
+  answer.
+
+## Development
+
+* Restored the `R-CMD-check` GitHub Actions workflow (dropped at `c6069e7` for
+  lack of a cross-repo secret to read the private `decideR` dependency);
+  green once `GH_PAT` is added to the repo.
+
 # grainPlan 0.1.1
 
 A safety and consistency release. No public function is removed or renamed, but
