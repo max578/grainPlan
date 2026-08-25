@@ -25,7 +25,7 @@ abstention logic, and the grounding firewall are all `decideR`'s, reused whole;
 grainPlan adds the grain economics and the grain meaning.
 
 This walkthrough runs end-to-end on public data from the *agridat* package -- a
-real nitrogen response trial and a real variety trial -- and shows the two
+real nitrogen-response trial and a real variety trial -- and shows the two
 behaviours that matter for a consequential real-world tool: grounded evidence
 *decides*, and unverified evidence *abstains* to the status quo.
 
@@ -37,7 +37,7 @@ have_agridat <- requireNamespace("agridat", quietly = TRUE)
 ## A nitrogen rate from a real yield response
 
 The *agridat* dataset `lasrosas.corn` records yield and applied nitrogen across
-a precision-agriculture corn trial in Argentina (Lasrosas farm). We summarise it
+a precision-agriculture corn trial near Las Rosas, Argentina. We summarise it
 into a yield-response curve, build a posterior of yield at each candidate rate,
 and ask grainPlan for the profit-optimal rate.
 
@@ -55,23 +55,34 @@ corn <- lasrosas.corn
 # spread used to build a posterior of yield at each rate. This stands in for the
 # yield posterior an ORCHESTRA inference member (a PESTO inversion, a TACI
 # yield-response model) would emit as an orchestra_manifest.
+#
+# The draws MUST be coupled across rate columns: one draw index has to mean
+# "the same realised season" at every candidate rate, because the decision
+# is a *paired* comparison between candidate rates on the posterior, not a
+# comparison of two independent samples. We therefore draw one residual
+# vector `eps` and add it to every rate's fitted mean, rather than drawing
+# each column independently (independent columns roughly double the
+# between-rate contrast variance and can mask a real, decisive difference).
 rates <- seq(0, 120, by = 20)
 fit <- stats::lm(yield ~ nitro + I(nitro^2), data = corn)
 sigma <- summary(fit)$sigma
 
 n_draws <- 1500L
+eps <- stats::rnorm(n_draws, 0, sigma)
 yield_draws <- vapply(
   rates,
   function(r) {
     mu <- stats::predict(fit, newdata = data.frame(nitro = r))
-    stats::rnorm(n_draws, mu, sigma)
+    mu + eps
   },
   numeric(n_draws))
 
-# Grain and nitrogen prices are the caller's to supply (illustrative here).
+# Grain and nitrogen prices are the caller's to supply. `lasrosas.corn` reports
+# yield in quintals/ha (agridat's own documentation), so the grain price below
+# is expressed per quintal; it is illustrative, not a grounded market quote.
 n_plan <- plan_nitrogen_rate(
   yield_draws, rates,
-  price_grain = 0.25,           # $ per unit yield (illustrative)
+  price_grain = 22,             # $ per quintal (illustrative)
   price_n = 1.2,                # $ per unit nitrogen (illustrative)
   crop = "corn",
   grounding = decideR::grounding_grounded())
@@ -82,6 +93,28 @@ n_plan
 The recommendation is a `grain_decision`: the chosen rate, the crop, a
 grower-facing rationale, and -- carried beside the numbers, never inferred from
 them -- the grounding token.
+
+```{r nitrogen-fig, eval = have_agridat, fig.cap = "Expected profit against candidate nitrogen rate for the lasrosas.corn fit: profit rises from the status quo, peaks at the chosen rate, and falls away beyond it."}
+candidates <- n_plan@decision@candidates
+graphics::plot(
+  candidates$action, candidates$expected_utility,
+  type = "b", pch = 16,
+  xlab = "Nitrogen rate (kg N/ha)", ylab = "Expected profit ($/unit area)",
+  main = "Profit-vs-rate curve behind the recommendation")
+graphics::points(n_plan@action, max(candidates$expected_utility),
+                  pch = 17, col = "forestgreen", cex = 1.4)
+graphics::points(0, candidates$expected_utility[candidates$action == 0],
+                  pch = 15, col = "grey40", cex = 1.2)
+graphics::legend("bottomright", bty = "n",
+  legend = c("chosen rate", "status quo (0 kg N/ha)"),
+  pch = c(17, 15), col = c("forestgreen", "grey40"))
+```
+
+The curve is why the decision is decisive rather than a coin toss between
+neighbouring rates: expected profit rises steadily from the status quo,
+peaks sharply at the chosen rate, and falls away either side of it, so the
+gap between the chosen rate and its nearest neighbours is well above the
+posterior's rate-to-rate noise.
 
 ### The firewall: unverified evidence abstains
 
@@ -120,18 +153,26 @@ met <- besag.met
 # Genotype means across environments, with the trial's environment-to-environment
 # spread giving each genotype a merit posterior. (A factor-analytic MET model --
 # flexyBayes::fb_met_summary -- would emit this as an orchestra_manifest; here we
-# build it directly from the public trial. A few yield cells are missing, so we
-# summarise with na.rm and fall back to the trial-wide spread for any genotype
-# with too few records to estimate its own.)
+# build it directly from the public trial.) The posterior we need is of the
+# GENOTYPE MEAN, not of a single plot, so the per-genotype plot-level spread
+# must be divided down to a standard error of the mean (sd / sqrt(n)); using
+# the raw plot-level sd would overstate the mean's uncertainty by roughly
+# sqrt(n) and could mask a real, decisive ranking. A few yield cells are
+# missing, so we summarise with na.rm and fall back to the trial-wide spread
+# (also converted to a standard error) for any genotype with too few records
+# to estimate its own.
 gen_means <- tapply(met$yield, met$gen, mean, na.rm = TRUE)
 gen_sd <- tapply(met$yield, met$gen, stats::sd, na.rm = TRUE)
+gen_n <- tapply(met$yield, met$gen, function(x) sum(!is.na(x)))
 pooled_sd <- stats::sd(met$yield, na.rm = TRUE)
 gen_sd[is.na(gen_sd)] <- pooled_sd
+gen_n[gen_n < 2L] <- 1L
+gen_se <- gen_sd / sqrt(gen_n)
 varieties <- names(gen_means)
 
 merit_draws <- vapply(
   seq_along(gen_means),
-  function(j) stats::rnorm(1000L, gen_means[j], gen_sd[j]),
+  function(j) stats::rnorm(1000L, gen_means[j], gen_se[j]),
   numeric(1000L))
 colnames(merit_draws) <- varieties
 
@@ -142,12 +183,16 @@ v_plan <- plan_variety(
 v_plan
 ```
 
-The recommendation is the leading genotype; the full ranked short-list is in the
-wrapped decision's candidate ledger:
+The recommendation is the leading genotype on the downside-aware ranking; the
+full ranked short-list is in the wrapped decision's candidate ledger, with the
+genotype labels attached (the ledger's `action` column carries the integer
+index grainPlan decides over, so we join the variety names back on for a
+readable table):
 
 ```{r shortlist, eval = have_agridat}
 ledger <- v_plan@decision@candidates
-ledger <- ledger[order(-ledger$expected_utility), ]
+ledger$variety <- varieties[ledger$action]
+ledger <- ledger[order(-ledger$expected_utility), c("variety", "action", "expected_utility", "feasible")]
 head(ledger, 5L)
 ```
 
@@ -163,18 +208,30 @@ each band, exactly the threshold economics `decideR`'s grade-band loss expresses
 
 ```{r grade}
 v <- wheat_protein_bands()
-v
+# `v` is a decideR::grade_band_value -- a step function -- so printing it
+# directly would dump its closure body and a run-specific memory address;
+# the schedule itself is the breaks/values/labels triple below.
+attributes(v)[c("breaks", "values", "labels")]
 
 # A baseline protein posterior just below the milling band; a nitrogen top-up
 # lifts protein, at a per-unit cost. The decision weighs the chance of clearing
-# the 11.5% APW band against the cost.
+# the 11.5% band against the cost.
 protein <- stats::rnorm(2000L, mean = 11.0, sd = 0.5)
 g_plan <- plan_grade_target(
   protein, actions = seq(0, 60, by = 10), value = v,
-  quality_shift = function(rate, p) p + 0.02 * rate, cost = 1.3,
+  quality_shift = function(rate, p) p + 0.02 * rate, cost = 0.3,
   crop = "wheat", grounding = decideR::grounding_grounded())
 
 g_plan
+```
+
+At this cost the top-up pays for itself: the recommended input level is the
+top of the candidate range, because the expected graded payoff rises
+monotonically with the higher probability of clearing the 11.5% band -- the
+candidate ledger below shows the full trade-off.
+
+```{r grade-candidates}
+g_plan@decision@candidates
 ```
 
 ## Composing a season plan
