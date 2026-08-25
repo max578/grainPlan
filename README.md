@@ -10,12 +10,12 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 <!-- badges: end -->
 
 grainPlan is the grain-specific decision orchestrator of the ORCHESTRA
-agricultural analytics stack – the practitioner last-mile that turns an
-upstream member’s inference result into an actionable grain-production
+agricultural analytics stack -- the practitioner last-mile that turns an
+upstream member's inference result into an actionable grain-production
 plan.
 
 It is a thin grain-semantics layer on top of
-[decideR](https://github.com/max578/decideR): it reuses decideR’s
+[decideR](https://github.com/max578/decideR): it reuses decideR's
 decision engine, its manifest-native pipeline tail, its grade-band loss
 library, and its grounding firewall, and adds the grain economics those
 decisions kept re-deriving. grainPlan never reinvents decision theory,
@@ -24,17 +24,17 @@ composes them with grain meaning.
 
 ## What it gives you
 
-- **Grain decision verbs** – `plan_nitrogen_rate()` (a profit-priced
+- **Grain decision verbs** -- `plan_nitrogen_rate()` (a profit-priced
   nitrogen rate), `plan_variety()` (a downside-aware variety ranking
   from a multi-environment trial or a genomic posterior), and
   `plan_grade_target()` (a quality-band decision against a delivery
   standard). Each returns a `grain_decision`.
-- **A grain value / loss library** – `wheat_protein_bands()`,
+- **A grain value / loss library** -- `wheat_protein_bands()`,
   `barley_malting_premium()`, and `n_rate_economics()`: the economic
   schedules the orchestra runs kept hand-building, consolidated into
   reusable, documented primitives built from published grade
   conventions.
-- **A season orchestrator** – `plan_season()` composes several grain
+- **A season orchestrator** -- `plan_season()` composes several grain
   decisions into one `grain_plan`, combining their grounding worst-case
   so a plan resting on any unverified input abstains as a whole.
 
@@ -51,7 +51,7 @@ remotes::install_github("max578/grainPlan")
 
 A nitrogen-rate decision on grounded yield evidence decides; the same
 decision on unverified evidence abstains to the status quo. This is the
-inherited Independent Oracle Principle firewall – a grain decision is
+inherited Independent Oracle Principle firewall -- a grain decision is
 never minted on a fact the upstream producer did not ground.
 
 ``` r
@@ -86,7 +86,7 @@ plan_nitrogen_rate(yld, rates, price_grain = 350, price_n = 1.3,
 ## The orchestra
 
 grainPlan is a member of the ORCHESTRA federation: it consumes the
-`orchestra_manifest` contract through decideR’s duck-typed tail and
+`orchestra_manifest` contract through decideR's duck-typed tail and
 depends only on decideR (the orchestra DAG stays acyclic, with grainPlan
 a leaf at the decision tail). See `CONSTELLATION_MEMBER.md` for the full
 roster.
