@@ -202,3 +202,43 @@ test_that("a manifest with no grounding token anywhere reads as unverified", {
   gd <- plan_variety_from_manifest(m, gebv_sd = 0.2)
   expect_false(grain_is_grounded(gd))
 })
+
+test_that("the genomic manifest tail abstains when the producer itself declared an abstention (GP-03)", {
+  # Contract v1.1's typed abstain state (`summary$abstained`) must force
+  # abstention even when the grounding token alone reads "grounded" -- before
+  # the fix, `.manifest_grounding_token()` never consulted it and this
+  # manifest was priced as a confident switch to "g2".
+  gebv <- c(g1 = 0.2, g2 = 1.1, g3 = -0.3, g4 = 0.5)
+  m <- .fixture_gebv_manifest(gebv, decideR::grounding_grounded(),
+                              summary = list(abstained = TRUE))
+  gd <- plan_variety_from_manifest(m, risk_aversion = 0.5, gebv_sd = 0.2,
+                                   incumbent = "g1")
+  expect_true(gd@abstained)
+  expect_equal(gd@action, "g1")
+  expect_equal(gd@decision@abstain_reason, "producer_abstained")
+})
+
+test_that("the genomic manifest tail abstains on the wrong inferential_target (GP-04)", {
+  # A manifest whose declared inferential_target is not "breeding_values"
+  # must not be priced as a GEBV posterior at all -- before the fix there was
+  # no check, and reading a mismatched payload risked either a confident wrong
+  # answer or an opaque payload error.
+  gebv <- c(g1 = 0.2, g2 = 1.1, g3 = -0.3, g4 = 0.5)
+  m <- .fixture_gebv_manifest(gebv, decideR::grounding_grounded())
+  m@metadata$inferential_target <- "predictions"
+  gd <- plan_variety_from_manifest(m, risk_aversion = 0.5, gebv_sd = 0.2,
+                                   incumbent = "g1")
+  expect_true(gd@abstained)
+  expect_equal(gd@action, "g1")
+  expect_equal(gd@decision@abstain_reason, "wrong_inferential_target")
+})
+
+test_that("a manifest declaring breeding_values still decides (GP-04, negative)", {
+  gebv <- c(g1 = 0.2, g2 = 1.1, g3 = -0.3, g4 = 0.5)
+  m <- .fixture_gebv_manifest(gebv, decideR::grounding_grounded())
+  m@metadata$inferential_target <- "breeding_values"
+  set.seed(3L)
+  gd <- plan_variety_from_manifest(m, risk_aversion = 0.5, gebv_sd = 0.2)
+  expect_false(gd@abstained)
+  expect_equal(gd@action, "g2")
+})

@@ -287,7 +287,9 @@ plan_variety <- function(merit_draws, varieties = NULL, risk_aversion = 0.5,
 #'   Breeding Values* (3rd ed.). CABI. The reliability-PEV relation
 #'   \eqn{r^2 = 1 - PEV/\sigma^2_a}.
 #' @return A [grain_decision] of kind `"variety"` whose `action` is the
-#'   recommended genotype name.
+#'   recommended genotype name. Held at the incumbent, unread, when the
+#'   manifest's own producer declared an abstention (`summary$abstained`), or
+#'   when it declares an `inferential_target` other than `"breeding_values"`.
 #' @examples
 #' \dontrun{
 #' # `manifest` is a breeding_values orchestra_manifest S7 object -- the manifest
@@ -305,6 +307,26 @@ plan_variety_from_manifest <- function(manifest, genotypes = NULL,
                                        gebv_sd = NULL, n_draws = 1000L,
                                        crop = "wheat", grounding = NULL,
                                        decisive_prob = 0.6, ...) {
+  # Contract checks first (GP-03, GP-04): a producer's own typed abstention, or
+  # a declared `inferential_target` other than `breeding_values`, forces the
+  # incumbent before the GEBV payload is ever read -- reading it first would
+  # either mask the refusal with a confident recommendation, or error out on a
+  # manifest that was never a breeding_values manifest to begin with.
+  violation <- .manifest_contract_violation(
+    manifest, accepted_targets = "breeding_values")
+  if (!is.null(violation)) {
+    safe_label <- if (is.null(incumbent)) "incumbent" else as.character(incumbent)
+    d <- .manifest_contract_refusal(
+      violation, safe_action = safe_label, safe_label = safe_label,
+      method = "downside_aware_merit", manifest = manifest)
+    return(.wrap_variety_decision(
+      d, variety = safe_label, crop = crop,
+      context = list(evidence = "breeding_values manifest",
+                     incumbent = safe_label,
+                     reconstructed_posterior = NA,
+                     gebv_sd_source = NA_character_)))
+  }
+
   payload <- .manifest_gebv(manifest)
   g <- if (is.null(grounding)) .manifest_grounding_token(manifest) else grounding
 

@@ -51,7 +51,9 @@ beats the incumbent.}
 }
 \value{
 A \link{grain_decision} of kind \code{"variety"} whose \code{action} is the
-recommended genotype name.
+recommended genotype name. Held at the incumbent, unread, when the
+manifest's own producer declared an abstention (\code{summary$abstained}), or
+when it declares an \code{inferential_target} other than \code{"breeding_values"}.
 }
 \description{
 The genomic entry point to the variety decision: read genomic estimated
