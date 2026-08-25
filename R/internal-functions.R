@@ -149,3 +149,47 @@
                                        default = NA_character_)),
     metadata         = list(domain = "manifest_contract_check"))
 }
+
+# -----------------------------------------------------------------------------
+# ORCHESTRA cross-member refusal/abstention contract (GP-03 closeout, 2026-08-26)
+# -----------------------------------------------------------------------------
+# The federation's leader-side predicate `is_orchestra_decline()`
+# (`ORCHESTRA_dev/integration/refusal_contract.R`) recognises a member's
+# decline producer-agnostically by a naming convention on the RETURNED
+# OBJECT's `class()` vector: a structured refusal ends in `_refusal`, a
+# structured abstention ends in `_abstention`, or the object carries the
+# explicit `orchestra_refusal` marker class. decideR already stamps its own
+# `decision` this way (`decideR:::.stamp_abstention_class()` prepends
+# `"decideR_abstention"`), but grainPlan's OUTER `grain_decision` wrapper
+# never re-stamped itself -- a caller who receives a `grain_decision` sees
+# only `c("grainPlan::grain_decision", "S7_object")` regardless of whether the
+# wrapped decision abstained, so a cross-member gate built on the fleet
+# predicate was blind to every abstained grain decision (matrix path, a
+# manifest producer's own typed abstention, and a manifest whose declared
+# `inferential_target` this verb does not price all reach here with
+# `@abstained == TRUE`, since `.manifest_contract_refusal()` sets that field
+# too -- one stamp point covers all three).
+#
+# `.stamp_grain_decline_class()` prepends BOTH `"grainPlan_abstention"` (the
+# naming-convention suffix) and `"orchestra_refusal"` (the explicit marker) so
+# the object is recognised by either half of the fleet predicate. Prepending
+# (never replacing) preserves S7 property access and S7 method dispatch --
+# `@` access and the registered `print.grain_decision` method both keep
+# working with the extra classes present (verified in
+# `test-orchestra-refusal-contract.R`), exactly as decideR's own
+# `.stamp_abstention_class()` already relies on for its `decision` objects.
+#
+# @noRd
+.stamp_grain_decline_class <- function(x) {
+  if (isTRUE(x@abstained)) {
+    cls <- class(x)
+    if (!any(cls == "grainPlan_abstention")) {
+      cls <- c("grainPlan_abstention", cls)
+    }
+    if (!any(cls == "orchestra_refusal")) {
+      cls <- c("orchestra_refusal", cls)
+    }
+    class(x) <- cls
+  }
+  x
+}

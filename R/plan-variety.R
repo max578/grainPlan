@@ -204,7 +204,7 @@ plan_variety <- function(merit_draws, varieties = NULL, risk_aversion = 0.5,
              "ranking and clearly beats the incumbent (%s) on the posterior."),
       variety, crop, context$incumbent)
   }
-  grain_decision(
+  gd <- grain_decision(
     decision  = d,
     crop      = crop,
     kind      = "variety",
@@ -214,6 +214,7 @@ plan_variety <- function(merit_draws, varieties = NULL, risk_aversion = 0.5,
     grounding = grounding,
     rationale = rationale,
     context   = context)
+  .stamp_grain_decline_class(gd)
 }
 
 # -----------------------------------------------------------------------------

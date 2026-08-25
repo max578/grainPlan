@@ -1,5 +1,25 @@
 # grainPlan (development version)
 
+## Bug fixes
+
+* `plan_nitrogen_rate()`, `plan_nitrogen_rate_from_manifest()`,
+  `plan_variety()`, `plan_variety_from_manifest()`, and `plan_grade_target()`
+  raised a correctly-typed decline inside `decideR` (an abstained
+  `decideR::decision`, itself stamped `decideR_abstention`), but returned an
+  unstamped outer `grain_decision` whenever the wrapped decision abstained --
+  whether from ordinary evidence-driven abstention, a manifest producer's own
+  typed abstention, or a manifest declaring an `inferential_target` the verb
+  does not price. The outer object's class stayed
+  `c("grainPlan::grain_decision", "S7_object")` regardless, invisible to the
+  ORCHESTRA fleet's producer-agnostic decline predicate
+  (`is_orchestra_decline()`). Fixed: the outer `grain_decision`'s class vector
+  is now prepended with `grainPlan_abstention` and `orchestra_refusal`
+  whenever `@abstained` is `TRUE`, matching `decideR`'s own stamping
+  convention. Prepending, not replacing, so `@` access and the registered
+  `print.grain_decision` method are unaffected. What is refused is unchanged
+  -- only how the decline is signalled to a fleet-level gate (GP-03
+  closeout).
+
 ## Documentation
 
 * The nitrogen-rate vignette chunk drew an independent posterior column per
