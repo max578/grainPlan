@@ -1,5 +1,45 @@
 # grainPlan (development version)
 
+## Documentation
+
+* The nitrogen-rate vignette chunk drew an independent posterior column per
+  candidate rate; `decideR`'s decisiveness gate is a *paired* comparison, so
+  independent columns inflated the between-rate contrast variance and could
+  mask a real, decisive profit difference. The chunk now shares one residual
+  draw across rate columns, with the coupling requirement documented in-line
+  (GP-01).
+* The vignette's headline nitrogen example priced `lasrosas.corn` yield
+  (quintals/ha) at $0.25/unit, roughly 100x below a realistic grain price, so
+  the "profit-optimal" recommendation degenerated to the status-quo rate with
+  no comment. Repriced to $22/quintal; the example now recommends a non-zero
+  rate and a new captioned figure shows the profit-vs-rate curve behind it
+  (GP-15, GP-16).
+* The variety-ranking vignette chunk used each genotype's plot-level residual
+  spread as the posterior standard deviation of the genotype *mean*, which
+  overstates that uncertainty by roughly the square root of the replicate
+  count; corrected to the standard error of the mean (`sd / sqrt(n)`). The
+  prose claiming "the recommendation is the leading genotype" is now
+  consistent with the printed decision, which previously abstained (GP-07).
+* The variety short-list ledger printed integer candidate indices with no
+  genotype label; the vignette now joins the variety names back onto the
+  ledger before printing (GP-08).
+* Printing a `decideR::grade_band_value` schedule dumped its closure body and
+  a run-specific memory address into the rendered vignette; it is now
+  rendered as its `breaks`/`values`/`labels` attributes (GP-14).
+* The grade-target example's cost was high enough relative to the quality
+  shift that the profit-optimal action degenerated to the status quo, at
+  which point the printed rationale ("raising the posterior probability of
+  clearing a higher quality band") did not describe what a zero-input action
+  does; the example cost was lowered so the demonstration reaches a genuine,
+  non-degenerate recommendation, and the full candidate ledger is now shown.
+* Minor grammar and naming fixes: "nitrogen response trial" hyphenated to
+  "nitrogen-response trial"; the `lasrosas.corn` trial location corrected to
+  "Las Rosas" (agridat's own spelling), from the vignette's prior "Lasrosas
+  farm".
+* `README.Rmd` now renders without pandoc smart-punctuation substitution
+  (`md_extensions: -smart`), so `README.md` no longer carries Unicode en
+  dashes in prose; regenerated.
+
 ## Bug fixes
 
 * `plan_nitrogen_rate()` now errors on a `constraint` argument, which
