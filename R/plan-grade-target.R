@@ -137,7 +137,7 @@ plan_grade_target <- function(quality_draws, actions, value,
              "clearing a higher quality band, net of input cost."),
       d@action, crop, format(d@expected_utility, digits = 5L))
   }
-  grain_decision(
+  gd <- grain_decision(
     decision  = d,
     crop      = crop,
     kind      = "grade_target",
@@ -147,4 +147,5 @@ plan_grade_target <- function(quality_draws, actions, value,
     grounding = grounding,
     rationale = rationale,
     context   = context)
+  .stamp_grain_decline_class(gd)
 }

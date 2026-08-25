@@ -32,7 +32,7 @@
              "posterior."),
       d@action, "kg N/ha", crop, format(d@expected_utility, digits = 5L))
   }
-  grain_decision(
+  gd <- grain_decision(
     decision  = d,
     crop      = crop,
     kind      = "nitrogen_rate",
@@ -42,6 +42,7 @@
     grounding = grounding,
     rationale = rationale,
     context   = context)
+  .stamp_grain_decline_class(gd)
 }
 
 # -----------------------------------------------------------------------------
