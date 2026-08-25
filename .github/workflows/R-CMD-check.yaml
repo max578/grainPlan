@@ -1,0 +1,62 @@
+# Standard R CMD check matrix (r-lib/actions check-standard): three operating
+# systems and three R versions. Runs on pushes and pull requests to main only,
+# so feature-branch work stays local and the minutes budget is bounded.
+# Adapted from kalmix's R-CMD-check.yaml template (2026-08-25, GP-10): grainPlan
+# has no optional private test-oracle Suggests to drop (kalmix's kernR case),
+# but its single Import, decideR (DESCRIPTION `Remotes: max578/decideR`), is
+# itself a PRIVATE sibling repo. The default repo-scoped GITHUB_TOKEN cannot
+# read a private sibling, so GITHUB_PAT uses a cross-repo read secret (GH_PAT)
+# when present, falling back to the default token otherwise -- this workflow
+# only goes green once that secret is added to the max578/grainPlan repo.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+name: R-CMD-check
+
+permissions: read-all
+
+jobs:
+  R-CMD-check:
+    runs-on: ${{ matrix.config.os }}
+
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {os: macos-latest,   r: 'release'}
+          - {os: windows-latest, r: 'release'}
+          - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release'}
+          - {os: ubuntu-latest,  r: 'release'}
+          - {os: ubuntu-latest,  r: 'oldrel-1'}
+
+    env:
+      # decideR is a hard Import from a private sibling repo -- see the header
+      # note above.
+      GITHUB_PAT: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.config.r }}
+          http-user-agent: ${{ matrix.config.http-user-agent }}
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-snapshots: true
+          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'

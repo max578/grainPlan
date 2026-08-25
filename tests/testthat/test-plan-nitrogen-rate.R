@@ -125,3 +125,60 @@ test_that("scaling both prices leaves the recommended rate unchanged", {
                                grounding = decideR::grounding_grounded())
   expect_equal(base@action, scaled@action)
 })
+
+test_that("plan_nitrogen_rate errors on a `constraint` it cannot honour (GP-02)", {
+  # decideR::decide_input_rate() hardcodes constraint = NULL and only reads
+  # min_ess/ess out of `...`; before the fix, `constraint` vanished silently
+  # and the unconstrained rate (175) was returned as if the cap had applied.
+  rates <- seq(0, 200, by = 25)
+  yld <- .fixture_yield_draws(rates)
+  expect_error(
+    plan_nitrogen_rate(yld, rates, price_grain = 350, price_n = 1.3,
+                       grounding = decideR::grounding_grounded(),
+                       constraint = function(r) r <= 50),
+    "constraint")
+})
+
+test_that("the manifest verb abstains when the producer itself declared an abstention (GP-03)", {
+  # Contract v1.1's typed abstain state (`summary$abstained`) must force
+  # abstention even when the grounding token alone reads "grounded" -- before
+  # the fix this manifest was priced as a confident 175 kg N/ha.
+  rates <- seq(0, 200, by = 25)
+  yld <- .fixture_yield_draws(rates)
+  m <- .fixture_yield_manifest(yld, decideR::grounding_grounded(),
+                               summary = list(abstained = TRUE))
+  gd <- plan_nitrogen_rate_from_manifest(m, rates, price_grain = 350,
+                                         price_n = 1.3)
+  expect_true(gd@abstained)
+  expect_equal(gd@action, 0)
+  expect_equal(gd@decision@abstain_reason, "producer_abstained")
+  expect_match(gd@rationale, "declined to produce a result")
+})
+
+test_that("the manifest verb abstains on a manifest declaring the wrong inferential_target (GP-04)", {
+  # A manifest whose declared inferential_target is not one this verb prices
+  # (e.g. "marker_associations") must not be priced as a yield posterior --
+  # before the fix it was, returning a confident 175 kg N/ha.
+  rates <- seq(0, 200, by = 25)
+  yld <- .fixture_yield_draws(rates)
+  m <- .fixture_yield_manifest(
+    yld, decideR::grounding_grounded())
+  m@metadata$inferential_target <- "marker_associations"
+  gd <- plan_nitrogen_rate_from_manifest(m, rates, price_grain = 350,
+                                         price_n = 1.3)
+  expect_true(gd@abstained)
+  expect_equal(gd@action, 0)
+  expect_equal(gd@decision@abstain_reason, "wrong_inferential_target")
+})
+
+test_that("a manifest declaring an accepted inferential_target still decides (GP-04, negative)", {
+  # A declared target that IS accepted must not be caught by the new check.
+  rates <- seq(0, 200, by = 25)
+  yld <- .fixture_yield_draws(rates)
+  m <- .fixture_yield_manifest(yld, decideR::grounding_grounded())
+  m@metadata$inferential_target <- "predictions"
+  gd <- plan_nitrogen_rate_from_manifest(m, rates, price_grain = 350,
+                                         price_n = 1.3)
+  expect_false(gd@abstained)
+  expect_true(gd@action > 0)
+})

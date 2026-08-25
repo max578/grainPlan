@@ -40,7 +40,11 @@ status quo).}
 \item{decisive_prob}{Minimum posterior probability that the leading rate
 beats the status quo (passed to \code{decideR::decide()}).}
 
-\item{...}{Further arguments passed to the decision core (e.g. \code{min_ess}).}
+\item{...}{Further arguments passed to the decision core (e.g. \code{min_ess}).
+\code{constraint} is rejected with an error: \code{decideR::decide_input_rate()}
+does not honour a rate constraint and would otherwise drop it silently
+(use \code{\link[=plan_nitrogen_rate_from_manifest]{plan_nitrogen_rate_from_manifest()}}, which does honour one, or cap
+\code{rates} before calling).}
 }
 \value{
 A \link{grain_decision} of kind \code{"nitrogen_rate"} whose \code{action} is the

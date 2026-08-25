@@ -42,7 +42,9 @@ beats the status quo.}
 }
 \value{
 A \link{grain_decision} of kind \code{"nitrogen_rate"} whose \code{action} is the
-recommended rate.
+recommended rate. Held at \code{safe_rate}, unpriced, when the manifest's own
+producer declared an abstention (\code{summary$abstained}), or when it declares
+an \code{inferential_target} other than \code{"predictions"} or \code{"parameters"}.
 }
 \description{
 The manifest entry point to the nitrogen-rate decision: source the yield

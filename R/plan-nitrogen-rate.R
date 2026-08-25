@@ -82,6 +82,10 @@
 #' @param decisive_prob Minimum posterior probability that the leading rate
 #'   beats the status quo (passed to `decideR::decide()`).
 #' @param ... Further arguments passed to the decision core (e.g. `min_ess`).
+#'   `constraint` is rejected with an error: `decideR::decide_input_rate()`
+#'   does not honour a rate constraint and would otherwise drop it silently
+#'   (use [plan_nitrogen_rate_from_manifest()], which does honour one, or cap
+#'   `rates` before calling).
 #' @return A [grain_decision] of kind `"nitrogen_rate"` whose `action` is the
 #'   recommended rate.
 #' @examples
@@ -105,6 +109,21 @@ plan_nitrogen_rate <- function(yield_draws, rates, price_grain, price_n,
   if (!is.matrix(yield_draws) || ncol(yield_draws) != length(rates)) {
     stop("`yield_draws` must be a matrix with one column per rate",
          call. = FALSE)
+  }
+  # `decideR::decide_input_rate()` hardcodes `constraint = NULL` and, of `...`,
+  # honours only `min_ess`/`ess` -- anything else, `constraint` included, is
+  # silently dropped by R's own `...` forwarding, not by any check of theirs or
+  # ours. A caller passing a constraint here would see it vanish with no
+  # warning (it *is* honoured on the manifest entry point, which routes
+  # through a different decideR tail), so grainPlan owes the loud error itself.
+  dots <- list(...)
+  if ("constraint" %in% names(dots)) {
+    stop(paste0(
+      "`constraint` is not supported by `plan_nitrogen_rate()` -- ",
+      "`decideR::decide_input_rate()` does not accept a constraint and would ",
+      "silently ignore it. Use `plan_nitrogen_rate_from_manifest()` (which ",
+      "honours `constraint`), or cap `rates` to the feasible set before ",
+      "calling `plan_nitrogen_rate()`."), call. = FALSE)
   }
   econ <- n_rate_economics(price_grain = price_grain, price_n = price_n)
 
@@ -154,7 +173,9 @@ plan_nitrogen_rate <- function(yield_draws, rates, price_grain, price_n,
 #' @param ... Further arguments passed to the decision core (e.g. `min_ess`,
 #'   `draws_key`).
 #' @return A [grain_decision] of kind `"nitrogen_rate"` whose `action` is the
-#'   recommended rate.
+#'   recommended rate. Held at `safe_rate`, unpriced, when the manifest's own
+#'   producer declared an abstention (`summary$abstained`), or when it declares
+#'   an `inferential_target` other than `"predictions"` or `"parameters"`.
 #' @examples
 #' \dontrun{
 #' # `manifest` is an orchestra_manifest S7 object emitted upstream (a PESTO
@@ -176,14 +197,27 @@ plan_nitrogen_rate_from_manifest <- function(manifest, rates, price_grain,
                                              decisive_prob = 0.6, ...) {
   econ <- n_rate_economics(price_grain = price_grain, price_n = price_n)
 
-  # `grounding = NULL` lets decideR's tail read the manifest's own token; a
-  # non-NULL override is forwarded verbatim, so the two manifest verbs share the
-  # same override semantics.
-  d <- decideR::decide_rate_from_manifest(
-    manifest = manifest, rates = rates,
-    price_grain = econ$price_grain, price_input = econ$price_n,
-    grounding = grounding, safe_rate = safe_rate,
-    decisive_prob = decisive_prob, ...)
+  # Contract checks first (GP-03, GP-04): a producer's own typed abstention, or
+  # a declared `inferential_target` this verb does not price, forces the
+  # status-quo rate before any draws are read -- decideR's tail reads neither
+  # of these off the manifest, so grainPlan owes the check itself.
+  violation <- .manifest_contract_violation(
+    manifest, accepted_targets = c("predictions", "parameters"))
+  if (!is.null(violation)) {
+    d <- .manifest_contract_refusal(
+      violation, safe_action = safe_rate,
+      safe_label = sprintf("rate=%g (status quo)", safe_rate),
+      method = "expected_profit", manifest = manifest)
+  } else {
+    # `grounding = NULL` lets decideR's tail read the manifest's own token; a
+    # non-NULL override is forwarded verbatim, so the two manifest verbs share
+    # the same override semantics.
+    d <- decideR::decide_rate_from_manifest(
+      manifest = manifest, rates = rates,
+      price_grain = econ$price_grain, price_input = econ$price_n,
+      grounding = grounding, safe_rate = safe_rate,
+      decisive_prob = decisive_prob, ...)
+  }
 
   context <- list(rates = rates, economics = econ,
                   evidence = "orchestra_manifest",

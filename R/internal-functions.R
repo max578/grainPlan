@@ -55,5 +55,97 @@
       lead, subject),
     no_feasible_action = sprintf("%s: no %s is feasible.", lead, subject),
     low_ess = sprintf("%s: too few effective draws to decide.", lead),
+    producer_abstained = sprintf(
+      paste0("%s: the upstream evidence producer itself declined to ",
+             "produce a result, so the recommendation is withheld."),
+      lead),
+    wrong_inferential_target = sprintf(
+      "%s: the upstream manifest is not the kind of evidence that prices a %s.",
+      lead, subject),
     sprintf("%s (%s).", lead, reason))
+}
+
+# -----------------------------------------------------------------------------
+# Manifest-contract checks (GP-03, GP-04)
+# -----------------------------------------------------------------------------
+
+# Read whether the upstream producer itself declared a typed abstention on the
+# manifest (contract v1.1's `summary` slot, `manifest_summary(headline,
+# abstained, metrics)`) -- distinct from the grounding token, and not consulted
+# by decideR's duck-typed manifest tail. Duck-typed off `summary` (the contract
+# slot), with a `metadata$summary` fallback for a manifest that nests its
+# summary there; anything that does not resolve to a single `TRUE` is read as
+# "not declared", never fabricated as a refusal.
+#
+# @noRd
+.manifest_producer_abstained <- function(m) {
+  summ <- .manifest_prop(m, "summary")
+  if (is.null(summ)) {
+    meta <- .manifest_prop(m, "metadata", default = list())
+    summ <- meta[["summary"]]
+  }
+  isTRUE(summ[["abstained"]])
+}
+
+# Read the manifest's declared `inferential_target` (contract v1.1, the
+# `orchestra_manifest` metadata slot naming what an inference result
+# represents -- `"predictions"`, `"parameters"`, `"breeding_values"`, etc.),
+# duck-typed off `metadata`. `NA_character_` when the manifest carries none (an
+# older or non-conforming producer never declared the field): callers treat
+# that as "not declared", a field a consumer cannot yet check, never as a
+# refusal by omission.
+#
+# @noRd
+.manifest_inferential_target <- function(m) {
+  meta <- .manifest_prop(m, "metadata", default = list())
+  tgt <- meta[["inferential_target"]]
+  if (is.character(tgt) && length(tgt) == 1L) tgt else NA_character_
+}
+
+# Check a manifest against the two contract obligations a consumer owes it
+# before trusting its draws: a producer's own typed abstention always wins
+# (GP-03); otherwise, when the manifest declares an `inferential_target`, it
+# must be one this verb is built to price (GP-04). Returns the abstain reason
+# string ("producer_abstained" / "wrong_inferential_target") that applies, or
+# `NULL` when the manifest clears both checks. `accepted_targets` names the
+# targets this verb honours.
+#
+# @noRd
+.manifest_contract_violation <- function(manifest, accepted_targets) {
+  if (.manifest_producer_abstained(manifest)) {
+    return("producer_abstained")
+  }
+  declared <- .manifest_inferential_target(manifest)
+  if (!is.na(declared) && !declared %in% accepted_targets) {
+    return("wrong_inferential_target")
+  }
+  NULL
+}
+
+# Build a decideR `decision` object that refuses outright, for use when a
+# manifest fails a contract check (GP-03/GP-04) -- checked before any draws or
+# payload are read, so the refusal never depends on what the (wrong or
+# declined) manifest happens to carry. `grounding` is always the un-grounded
+# token: a forced contract refusal is never reported as grounded, whatever the
+# manifest's own token says.
+#
+# @noRd
+.manifest_contract_refusal <- function(reason, safe_action, safe_label,
+                                       method, manifest) {
+  decideR::decision(
+    action           = safe_action,
+    action_label     = paste0(safe_label, " [", reason, "]"),
+    expected_utility = NA_real_,
+    candidates       = NULL,
+    grounding        = decideR::grounding_unverified(),
+    abstained        = TRUE,
+    abstain_reason   = reason,
+    safe_action      = safe_action,
+    method           = method,
+    inputs           = list(
+      manifest_run_id = .manifest_prop(manifest, "run_id",
+                                       default = NA_character_),
+      emitter_package = .manifest_prop(manifest, "emitter_package",
+                                       default = NA_character_)),
+    metadata         = list(domain = "manifest_contract_check"))
 }
