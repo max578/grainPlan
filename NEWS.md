@@ -59,6 +59,18 @@
 * `README.Rmd` now renders without pandoc smart-punctuation substitution
   (`md_extensions: -smart`), so `README.md` no longer carries Unicode en
   dashes in prose; regenerated.
+* The vignette was restructured to the orchestra's vignette quality bar: a
+  stated grower question up front, a fixed Why/What/Do/Read/Limits/What-to-
+  read-next/Reproduce shape, two `ggplot2` figures (a profit-vs-rate curve
+  and the wheat protein-band schedule) replacing the base-graphics plot and
+  the raw attribute dump, every table through `knitr::kable()`, and a new
+  season-composition example showing a plan that inherits an upstream
+  manifest producer's own typed abstention alongside a grounded decision,
+  read against the plan's `grain_plan_table()` and `grain_is_grounded()`
+  output. The `besag.met` variety example is now labelled `crop = "corn"`
+  (the trial is 64 corn hybrids across six North Carolina counties, not
+  wheat); citations added for both `agridat` sources (Anselin, Bongiovanni
+  & Lowenberg-DeBoer, 2004; Besag & Higdon, 1999).
 
 ## Bug fixes
 
