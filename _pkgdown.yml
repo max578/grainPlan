@@ -33,3 +33,6 @@ reference:
       - grain_decision
       - grain_plan
       - grain_is_grounded
+      - print.grain_decision
+      - print.grain_plan
+      - print.n_rate_economics
