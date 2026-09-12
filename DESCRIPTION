@@ -27,7 +27,6 @@ BugReports: https://github.com/max578/grainPlan/issues
 Encoding: UTF-8
 Language: en-AU
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 Config/testthat/edition: 3
 Depends:
     R (>= 3.5.0)
@@ -44,3 +43,4 @@ Suggests:
 Remotes:
     max578/decideR
 VignetteBuilder: knitr
+Config/roxygen2/version: 8.1.0

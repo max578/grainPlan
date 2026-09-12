@@ -56,10 +56,10 @@ plan_season(list(n_dec), crop = "wheat", season = "2026 paddock 7")
 \seealso{
 \code{\link[=plan_season]{plan_season()}} for the constructor; \link{grain_decision} for the unit.
 
-Other grain-objects: 
-\code{\link{grain_decision}()},
-\code{\link{grain_is_grounded}()},
-\code{\link{grain_plan_table}()},
-\code{\link{plan_season}()}
+Other grain-objects:
+\code{\link[=grain_decision]{grain_decision()}},
+\code{\link[=grain_is_grounded]{grain_is_grounded()}},
+\code{\link[=grain_plan_table]{grain_plan_table()}},
+\code{\link[=plan_season]{plan_season()}}
 }
 \concept{grain-objects}

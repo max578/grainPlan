@@ -48,8 +48,8 @@ Australian grains gross-margin framework.
 \seealso{
 \code{\link[=plan_nitrogen_rate]{plan_nitrogen_rate()}} for the decision that consumes it.
 
-Other grain-value: 
-\code{\link{barley_malting_premium}()},
-\code{\link{wheat_protein_bands}()}
+Other grain-value:
+\code{\link[=barley_malting_premium]{barley_malting_premium()}},
+\code{\link[=wheat_protein_bands]{wheat_protein_bands()}}
 }
 \concept{grain-value}

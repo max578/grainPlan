@@ -35,10 +35,10 @@ grain_plan_table(plan_season(list(n_dec), crop = "wheat"))
 \seealso{
 \code{\link[=plan_season]{plan_season()}} for the plan; \link{grain_plan} for the object.
 
-Other grain-objects: 
-\code{\link{grain_decision}()},
-\code{\link{grain_is_grounded}()},
-\code{\link{grain_plan}()},
-\code{\link{plan_season}()}
+Other grain-objects:
+\code{\link[=grain_decision]{grain_decision()}},
+\code{\link[=grain_is_grounded]{grain_is_grounded()}},
+\code{\link[=grain_plan]{grain_plan()}},
+\code{\link[=plan_season]{plan_season()}}
 }
 \concept{grain-objects}

@@ -56,10 +56,10 @@ plan_season(list(v_dec, n_dec), crop = "wheat", season = "2026 paddock 7")
 \link{grain_plan} for the returned object; the \verb{plan_*()} verbs that
 build the decisions.
 
-Other grain-objects: 
-\code{\link{grain_decision}()},
-\code{\link{grain_is_grounded}()},
-\code{\link{grain_plan}()},
-\code{\link{grain_plan_table}()}
+Other grain-objects:
+\code{\link[=grain_decision]{grain_decision()}},
+\code{\link[=grain_is_grounded]{grain_is_grounded()}},
+\code{\link[=grain_plan]{grain_plan()}},
+\code{\link[=grain_plan_table]{grain_plan_table()}}
 }
 \concept{grain-objects}

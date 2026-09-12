@@ -55,8 +55,8 @@ illustrative.
 \code{\link[=wheat_protein_bands]{wheat_protein_bands()}} for the wheat counterpart;
 \code{\link[=plan_grade_target]{plan_grade_target()}} for the decision that consumes it.
 
-Other grain-value: 
-\code{\link{n_rate_economics}()},
-\code{\link{wheat_protein_bands}()}
+Other grain-value:
+\code{\link[=n_rate_economics]{n_rate_economics()}},
+\code{\link[=wheat_protein_bands]{wheat_protein_bands()}}
 }
 \concept{grain-value}

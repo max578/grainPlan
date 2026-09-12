@@ -83,10 +83,10 @@ plan_nitrogen_rate(yield_draws, rates, price_grain = 350, price_n = 1.3,
 \code{\link[=n_rate_economics]{n_rate_economics()}} for the economics; \code{\link[decideR:decide_input_rate]{decideR::decide_input_rate()}} for
 the underlying engine.
 
-Other grain-decisions: 
-\code{\link{plan_grade_target}()},
-\code{\link{plan_nitrogen_rate_from_manifest}()},
-\code{\link{plan_variety}()},
-\code{\link{plan_variety_from_manifest}()}
+Other grain-decisions:
+\code{\link[=plan_grade_target]{plan_grade_target()}},
+\code{\link[=plan_nitrogen_rate_from_manifest]{plan_nitrogen_rate_from_manifest()}},
+\code{\link[=plan_variety]{plan_variety()}},
+\code{\link[=plan_variety_from_manifest]{plan_variety_from_manifest()}}
 }
 \concept{grain-decisions}

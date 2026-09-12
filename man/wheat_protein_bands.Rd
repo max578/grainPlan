@@ -53,8 +53,8 @@ classes (AGW Feed, ASW, APW, AH, APH). Dollar values are illustrative.
 \code{\link[=barley_malting_premium]{barley_malting_premium()}} for the barley counterpart;
 \code{\link[=plan_grade_target]{plan_grade_target()}} for the decision that consumes it.
 
-Other grain-value: 
-\code{\link{barley_malting_premium}()},
-\code{\link{n_rate_economics}()}
+Other grain-value:
+\code{\link[=barley_malting_premium]{barley_malting_premium()}},
+\code{\link[=n_rate_economics]{n_rate_economics()}}
 }
 \concept{grain-value}

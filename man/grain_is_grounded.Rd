@@ -31,10 +31,10 @@ gd <- plan_nitrogen_rate(yld, rates, price_grain = 350, price_n = 1.3,
 grain_is_grounded(gd)
 }
 \seealso{
-Other grain-objects: 
-\code{\link{grain_decision}()},
-\code{\link{grain_plan}()},
-\code{\link{grain_plan_table}()},
-\code{\link{plan_season}()}
+Other grain-objects:
+\code{\link[=grain_decision]{grain_decision()}},
+\code{\link[=grain_plan]{grain_plan()}},
+\code{\link[=grain_plan_table]{grain_plan_table()}},
+\code{\link[=plan_season]{plan_season()}}
 }
 \concept{grain-objects}

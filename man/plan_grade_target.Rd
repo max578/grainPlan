@@ -87,10 +87,10 @@ plan_grade_target(protein, actions = seq(0, 60, by = 10), value = v,
 schedules; \code{\link[decideR:grade_band_utility]{decideR::grade_band_utility()}} for the loss; \code{\link[decideR:decide]{decideR::decide()}}
 for the engine.
 
-Other grain-decisions: 
-\code{\link{plan_nitrogen_rate}()},
-\code{\link{plan_nitrogen_rate_from_manifest}()},
-\code{\link{plan_variety}()},
-\code{\link{plan_variety_from_manifest}()}
+Other grain-decisions:
+\code{\link[=plan_nitrogen_rate]{plan_nitrogen_rate()}},
+\code{\link[=plan_nitrogen_rate_from_manifest]{plan_nitrogen_rate_from_manifest()}},
+\code{\link[=plan_variety]{plan_variety()}},
+\code{\link[=plan_variety_from_manifest]{plan_variety_from_manifest()}}
 }
 \concept{grain-decisions}

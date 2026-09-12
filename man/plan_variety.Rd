@@ -80,10 +80,10 @@ plan_variety(merit_draws, varieties, crop = "wheat",
 \code{\link[=plan_variety_from_manifest]{plan_variety_from_manifest()}} for a \code{breeding_values} manifest;
 \code{\link[decideR:decide]{decideR::decide()}} for the underlying engine.
 
-Other grain-decisions: 
-\code{\link{plan_grade_target}()},
-\code{\link{plan_nitrogen_rate}()},
-\code{\link{plan_nitrogen_rate_from_manifest}()},
-\code{\link{plan_variety_from_manifest}()}
+Other grain-decisions:
+\code{\link[=plan_grade_target]{plan_grade_target()}},
+\code{\link[=plan_nitrogen_rate]{plan_nitrogen_rate()}},
+\code{\link[=plan_nitrogen_rate_from_manifest]{plan_nitrogen_rate_from_manifest()}},
+\code{\link[=plan_variety_from_manifest]{plan_variety_from_manifest()}}
 }
 \concept{grain-decisions}

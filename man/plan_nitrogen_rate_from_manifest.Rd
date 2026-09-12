@@ -81,10 +81,10 @@ plan_nitrogen_rate_from_manifest(manifest, rates,
 \code{\link[=plan_nitrogen_rate]{plan_nitrogen_rate()}} for the caller-assembled-matrix form;
 \code{\link[decideR:decide_rate_from_manifest]{decideR::decide_rate_from_manifest()}} for the underlying tail.
 
-Other grain-decisions: 
-\code{\link{plan_grade_target}()},
-\code{\link{plan_nitrogen_rate}()},
-\code{\link{plan_variety}()},
-\code{\link{plan_variety_from_manifest}()}
+Other grain-decisions:
+\code{\link[=plan_grade_target]{plan_grade_target()}},
+\code{\link[=plan_nitrogen_rate]{plan_nitrogen_rate()}},
+\code{\link[=plan_variety]{plan_variety()}},
+\code{\link[=plan_variety_from_manifest]{plan_variety_from_manifest()}}
 }
 \concept{grain-decisions}

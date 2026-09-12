@@ -115,10 +115,10 @@ Breeding Values} (3rd ed.). CABI. The reliability-PEV relation
 \seealso{
 \code{\link[=plan_variety]{plan_variety()}} for the caller-assembled-matrix form.
 
-Other grain-decisions: 
-\code{\link{plan_grade_target}()},
-\code{\link{plan_nitrogen_rate}()},
-\code{\link{plan_nitrogen_rate_from_manifest}()},
-\code{\link{plan_variety}()}
+Other grain-decisions:
+\code{\link[=plan_grade_target]{plan_grade_target()}},
+\code{\link[=plan_nitrogen_rate]{plan_nitrogen_rate()}},
+\code{\link[=plan_nitrogen_rate_from_manifest]{plan_nitrogen_rate_from_manifest()}},
+\code{\link[=plan_variety]{plan_variety()}}
 }
 \concept{grain-decisions}

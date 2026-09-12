@@ -77,10 +77,10 @@ gd@action
 \link{grain_plan} for a season of decisions; \code{\link[=plan_nitrogen_rate]{plan_nitrogen_rate()}},
 \code{\link[=plan_variety]{plan_variety()}}, and \code{\link[=plan_grade_target]{plan_grade_target()}} for the verbs that build it.
 
-Other grain-objects: 
-\code{\link{grain_is_grounded}()},
-\code{\link{grain_plan}()},
-\code{\link{grain_plan_table}()},
-\code{\link{plan_season}()}
+Other grain-objects:
+\code{\link[=grain_is_grounded]{grain_is_grounded()}},
+\code{\link[=grain_plan]{grain_plan()}},
+\code{\link[=grain_plan_table]{grain_plan_table()}},
+\code{\link[=plan_season]{plan_season()}}
 }
 \concept{grain-objects}

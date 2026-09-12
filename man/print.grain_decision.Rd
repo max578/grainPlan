@@ -3,6 +3,10 @@
 \name{print.grain_decision}
 \alias{print.grain_decision}
 \title{Print a grain decision}
+\usage{
+## S7 method for class <grainPlan::grain_decision>
+print(x, ...)
+}
 \arguments{
 \item{x}{A \link{grain_decision}.}
 
