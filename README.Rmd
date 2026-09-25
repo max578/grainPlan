@@ -104,6 +104,17 @@ package is on a `0.x` series it follows a conservative stability rule.
 * A function or argument slated for removal gets at least one release carrying a
   deprecation warning first.
 
+## Contributing
+
+Bug reports and suggestions are welcome through the
+[issue tracker](https://github.com/max578/grainPlan/issues).
+
+## Citation
+
+```r
+citation("grainPlan")
+```
+
 ## Licence
 
 MIT (c) 2026 Max Moldovan.

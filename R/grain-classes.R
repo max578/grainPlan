@@ -217,6 +217,7 @@ grain_is_grounded <- function(x) {
 #'                          crop = "wheat",
 #'                          grounding = decideR::grounding_grounded()))
 #' @name print.grain_decision
+#' @usage NULL
 S7::method(print, grain_decision) <- function(x, ...) {
   status <- if (isTRUE(x@abstained)) "ABSTAINED" else "RECOMMENDED"
   cat(sprintf("<grain_decision> %s  [%s]\n", status, x@grounding))
@@ -245,6 +246,7 @@ S7::method(print, grain_decision) <- function(x, ...) {
 #'                          grounding = decideR::grounding_grounded())
 #' print(plan_season(list(gd), crop = "wheat", season = "2026 paddock 7"))
 #' @name print.grain_plan
+#' @usage NULL
 S7::method(print, grain_plan) <- function(x, ...) {
   n <- length(x@decisions)
   flag <- if (isTRUE(x@partial_abstention)) "  (partial abstention)" else ""

@@ -3,10 +3,6 @@
 \name{print.grain_plan}
 \alias{print.grain_plan}
 \title{Print a grain plan}
-\usage{
-## S7 method for class <grainPlan::grain_plan>
-print(x, ...)
-}
 \arguments{
 \item{x}{A \link{grain_plan}.}
 
