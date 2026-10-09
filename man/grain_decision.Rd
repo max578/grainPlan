@@ -11,7 +11,7 @@ grain_decision(
   action = NULL,
   unit = NA_character_,
   abstained = FALSE,
-  grounding = "[unverified]",
+  grounding = "ungrounded",
   rationale = NA_character_,
   context = list()
 )

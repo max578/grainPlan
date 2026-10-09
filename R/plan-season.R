@@ -3,7 +3,7 @@
 # =============================================================================
 # The "orchestrator" the package name promises: compose several grain decisions
 # into one provenance-carrying season plan. The composition is deliberately
-# simple and honest -- an ordered container that combines the decisions'
+# simple -- an ordered container that combines the decisions'
 # grounding worst-case (via decideR::combine_grounding) so the plan inherits the
 # weakest provenance among its parts, and flags partial abstention so a report
 # never reads a confident headline over a plan with a declined component. There
@@ -69,7 +69,8 @@ plan_season <- function(decisions, crop = NULL, season = "season",
   # rule, so the plan never claims a stronger provenance than its weakest part.
   tokens <- vapply(decisions, function(d) as.character(d@grounding),
                    character(1L))
-  grounding <- decideR::combine_grounding(tokens)
+  grounding <- .as_grain_grounding(
+    decideR::combine_grounding(.as_decider_grounding(tokens)))
   partial <- any(vapply(decisions, function(d) isTRUE(d@abstained),
                         logical(1L)))
 

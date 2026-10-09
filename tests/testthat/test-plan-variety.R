@@ -196,7 +196,7 @@ test_that("the reconstruction SD scale drives decide-vs-abstain (no hidden defau
 })
 
 test_that("a manifest with no grounding token anywhere reads as unverified", {
-  # F3 guard: exercise the grounding-token reader's honest fallback directly.
+  # F3 guard: exercise the grounding-token reader's fallback directly.
   gebv <- c(g1 = 0.2, g2 = 1.1)
   m <- .mini_manifest(outputs = list(gebv = gebv))   # no grounding set
   gd <- plan_variety_from_manifest(m, gebv_sd = 0.2)

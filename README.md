@@ -76,7 +76,7 @@ plan_nitrogen_rate(yld, rates, price_grain = 350, price_n = 1.3,
 plan_nitrogen_rate(yld, rates, price_grain = 350, price_n = 1.3,
                    crop = "wheat",
                    grounding = decideR::grounding_unverified())
-#> <grain_decision> ABSTAINED  [[unverified]]
+#> <grain_decision> ABSTAINED  [ungrounded]
 #>   crop   : wheat
 #>   kind   : nitrogen_rate
 #>   action : 0 kg N/ha

@@ -8,7 +8,7 @@ grain_plan(
   decisions = list(),
   crop = NA_character_,
   season = NA_character_,
-  grounding = "[unverified]",
+  grounding = "ungrounded",
   partial_abstention = FALSE,
   metadata = list()
 )
@@ -36,7 +36,7 @@ A \code{grain_plan} S7 object.
 The orchestrator's output: a sequence of \link{grain_decision} objects gathered
 into one provenance-carrying season plan. The plan's \code{grounding} is the
 worst case across its decisions (via \code{decideR::combine_grounding()}), so a
-plan that rests on any unverified decision is itself \verb{[unverified]} -- the
+plan that rests on any unverified decision is itself \code{"ungrounded"} -- the
 Independent Oracle Principle applied at the plan level. A plan is
 \code{partial_abstention} when at least one of its decisions abstained, which a
 report surfaces so a grower never reads a confident headline over a plan

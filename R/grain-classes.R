@@ -73,16 +73,13 @@ grain_decision <- S7::new_class(
     action    = S7::new_property(S7::class_any, default = NULL),
     unit      = S7::new_property(S7::class_character, default = NA_character_),
     abstained = S7::new_property(S7::class_logical, default = FALSE),
-    # Literal default rather than decideR::grounding_unverified() so the class
-    # definition does not depend on decideR's load order; the validator pins it
-    # to a canonical token.
-    grounding = S7::new_property(S7::class_character, default = "[unverified]"),
+    grounding = S7::new_property(S7::class_character, default = "ungrounded"),
     rationale = S7::new_property(S7::class_character, default = NA_character_),
     context   = S7::new_property(S7::class_list, default = list())
   ),
   validator = function(self) {
-    canon <- c(decideR::grounding_grounded(), decideR::grounding_unverified())
-    if (length(self@grounding) != 1L || !self@grounding %in% canon) {
+    if (length(self@grounding) != 1L ||
+          !self@grounding %in% .grain_grounding_tokens()) {
       return("@grounding must be exactly one canonical grounding token")
     }
     if (length(self@abstained) != 1L || is.na(self@abstained)) {
@@ -103,7 +100,7 @@ grain_decision <- S7::new_class(
 #' The orchestrator's output: a sequence of [grain_decision] objects gathered
 #' into one provenance-carrying season plan. The plan's `grounding` is the
 #' worst case across its decisions (via `decideR::combine_grounding()`), so a
-#' plan that rests on any unverified decision is itself `[unverified]` -- the
+#' plan that rests on any unverified decision is itself `"ungrounded"` -- the
 #' Independent Oracle Principle applied at the plan level. A plan is
 #' `partial_abstention` when at least one of its decisions abstained, which a
 #' report surfaces so a grower never reads a confident headline over a plan
@@ -141,13 +138,13 @@ grain_plan <- S7::new_class(
     season             = S7::new_property(S7::class_character,
                                           default = NA_character_),
     grounding          = S7::new_property(S7::class_character,
-                                          default = "[unverified]"),
+                                          default = "ungrounded"),
     partial_abstention = S7::new_property(S7::class_logical, default = FALSE),
     metadata           = S7::new_property(S7::class_list, default = list())
   ),
   validator = function(self) {
-    canon <- c(decideR::grounding_grounded(), decideR::grounding_unverified())
-    if (length(self@grounding) != 1L || !self@grounding %in% canon) {
+    if (length(self@grounding) != 1L ||
+          !self@grounding %in% .grain_grounding_tokens()) {
       return("@grounding must be exactly one canonical grounding token")
     }
     if (length(self@partial_abstention) != 1L ||

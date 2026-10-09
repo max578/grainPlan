@@ -83,7 +83,7 @@ plan_grade_target <- function(quality_draws, actions, value,
     stop("`value` must be a decideR::grade_band_value() schedule -- e.g. ",
          "wheat_protein_bands() or barley_malting_premium()", call. = FALSE)
   }
-  grounding <- decideR::combine_grounding(grounding)
+  grounding <- decideR::combine_grounding(.as_decider_grounding(grounding))
   if (is.null(safe_action)) {
     safe_action <- actions[[1L]]
   }

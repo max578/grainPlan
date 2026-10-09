@@ -35,8 +35,7 @@ test_that("one unverified decision taints the whole plan (worst-case)", {
   plan <- plan_season(list(d$v_dec, bad), crop = "wheat")
   expect_false(grain_is_grounded(plan))            # worst-case combination
   expect_true(plan@partial_abstention)             # one decision abstained
-  expect_equal(as.character(plan@grounding),
-               decideR::grounding_unverified())
+  expect_equal(as.character(plan@grounding), "ungrounded")
 })
 
 test_that("plan_season defaults the crop to the first decision", {

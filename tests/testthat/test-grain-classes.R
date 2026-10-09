@@ -3,7 +3,7 @@
 
 test_that("grain_decision validates its grounding token and kind", {
   expect_error(
-    grain_decision(grounding = "ungrounded"),
+    grain_decision(grounding = "unverified"),
     "canonical grounding token")
   expect_error(
     grain_decision(grounding = decideR::grounding_grounded(),
@@ -33,6 +33,25 @@ test_that("grain_is_grounded reads the worst-case token", {
                                kind = "variety")
   expect_true(grain_is_grounded(grounded))
   expect_false(grain_is_grounded(unverified))
+})
+
+test_that("both ungrounded tokens are accepted and stored as \"ungrounded\"", {
+  expect_identical(grain_decision()@grounding, "ungrounded")
+  expect_identical(grain_plan()@grounding, "ungrounded")
+  old <- grain_decision(grounding = "[unverified]", kind = "variety")
+  expect_false(grain_is_grounded(old))
+  expect_error(grain_decision(grounding = "unverified"), "canonical")
+
+  rates <- seq(0, 150, by = 25)
+  yld <- .fixture_yield_draws(rates, n = 600L)
+  for (token in c("ungrounded", "[unverified]")) {
+    gd <- plan_nitrogen_rate(yld, rates, price_grain = 350, price_n = 1.3,
+                             grounding = token)
+    expect_true(gd@abstained)
+    expect_identical(gd@grounding, "ungrounded")
+  }
+  plan <- plan_season(list(old, gd), crop = "wheat")
+  expect_identical(plan@grounding, "ungrounded")
 })
 
 test_that("print methods emit the expected lines and return invisibly", {

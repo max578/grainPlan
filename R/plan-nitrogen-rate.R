@@ -131,7 +131,7 @@ plan_nitrogen_rate <- function(yield_draws, rates, price_grain, price_n,
   d <- decideR::decide_input_rate(
     yield_draws = yield_draws, rates = rates,
     price_grain = econ$price_grain, price_input = econ$price_n,
-    grounding = grounding, safe_rate = safe_rate,
+    grounding = .as_decider_grounding(grounding), safe_rate = safe_rate,
     decisive_prob = decisive_prob, ...)
 
   context <- list(rates = rates, economics = econ,
@@ -155,7 +155,7 @@ plan_nitrogen_rate <- function(yield_draws, rates, price_grain, price_n,
 #' The grounding rides from the producer through the decision: an unverified
 #' yield manifest forces the status-quo rate. grainPlan takes no dependency on
 #' the manifest constructor; the manifest is read by decideR's duck-typed tail.
-#' A caller who has independently grounded (or wants to force `[unverified]` on)
+#' A caller who has independently grounded (or wants to force `"ungrounded"` on)
 #' a manifest can override the producer's token through `grounding`, matching
 #' [plan_variety_from_manifest()].
 #'
@@ -216,7 +216,7 @@ plan_nitrogen_rate_from_manifest <- function(manifest, rates, price_grain,
     d <- decideR::decide_rate_from_manifest(
       manifest = manifest, rates = rates,
       price_grain = econ$price_grain, price_input = econ$price_n,
-      grounding = grounding, safe_rate = safe_rate,
+      grounding = .as_decider_grounding(grounding), safe_rate = safe_rate,
       decisive_prob = decisive_prob, ...)
   }
 

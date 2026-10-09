@@ -111,7 +111,7 @@ plan_variety <- function(merit_draws, varieties = NULL, risk_aversion = 0.5,
   safe_idx <- .resolve_incumbent(incumbent, varieties)
 
   util_matrix <- .variety_utility_matrix(merit_draws, risk_aversion)
-  grounding <- decideR::combine_grounding(grounding)
+  grounding <- decideR::combine_grounding(.as_decider_grounding(grounding))
 
   # Decide over the variety indices: the candidate set is 1..n, the per-draw
   # utility of "choose variety j" is the jth column of the merit utility, and
@@ -521,7 +521,7 @@ plan_variety_from_manifest <- function(manifest, genotypes = NULL,
 
 # Read the grounding token a manifest carries, mirroring decideR's tail
 # convention (metadata$grounding first, then the typed summary metric, then the
-# honest un-grounded default). Validated downstream by the decision engine.
+# un-grounded default). Validated downstream by the decision engine.
 #
 # @noRd
 .manifest_grounding_token <- function(m) {

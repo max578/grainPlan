@@ -21,14 +21,50 @@
   invisible(TRUE)
 }
 
-# Pull the canonical grounding token off a decideR `decision`. A `decision`
-# always carries exactly one canonical token in its `@grounding` property
-# (decideR's validator enforces this), so this is a thin, named accessor that
-# keeps the call sites in the grain layer readable.
+# grainPlan stores "ungrounded" for anything not grounded. It reads that token,
+# the bracketed token of decideR 0.2.0 and earlier, and whatever token the
+# installed decideR writes.
+#
+# @noRd
+.grain_ungrounded <- "ungrounded"
+
+.grain_grounding_tokens <- function() {
+  unique(c(decideR::grounding_grounded(), decideR::grounding_unverified(),
+           .grain_ungrounded, "[unverified]"))
+}
+
+.ungrounded_tokens <- function() {
+  setdiff(.grain_grounding_tokens(), decideR::grounding_grounded())
+}
+
+# The token grainPlan stores in its own objects. Unknown strings pass through
+# unchanged so the class validators reject them.
+#
+# @noRd
+.as_grain_grounding <- function(tokens) {
+  tokens <- as.character(tokens)
+  tokens[tokens %in% .ungrounded_tokens()] <- .grain_ungrounded
+  tokens
+}
+
+# The token decideR expects on input. Unknown strings pass through unchanged so
+# decideR rejects them.
+#
+# @noRd
+.as_decider_grounding <- function(tokens) {
+  if (is.null(tokens)) {
+    return(NULL)
+  }
+  tokens <- as.character(tokens)
+  tokens[tokens %in% .ungrounded_tokens()] <- decideR::grounding_unverified()
+  tokens
+}
+
+# The grounding token of a decideR `decision`, as grainPlan stores it.
 #
 # @noRd
 .decision_grounding <- function(d) {
-  as.character(d@grounding)
+  .as_grain_grounding(d@grounding)
 }
 
 # Compose a grower-facing abstention rationale for one of decideR's abstain
@@ -40,7 +76,7 @@
 # an input, a kept incumbent), `evidence` names the posterior at stake, `subject`
 # is the candidate noun (a rate, a variety, an input level), and `act` is the
 # thing the firewall declines to do. The final arm keeps a generic template so a
-# reason decideR adds later degrades to an honest sentence rather than an error.
+# reason decideR adds later degrades to a generic sentence rather than an error.
 #
 # @noRd
 .abstain_rationale <- function(reason, lead, evidence, subject, act) {

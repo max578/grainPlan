@@ -61,7 +61,7 @@ depending on the contract package.
 The grounding rides from the producer through the decision: an unverified
 yield manifest forces the status-quo rate. grainPlan takes no dependency on
 the manifest constructor; the manifest is read by decideR's duck-typed tail.
-A caller who has independently grounded (or wants to force \verb{[unverified]} on)
+A caller who has independently grounded (or wants to force \code{"ungrounded"} on)
 a manifest can override the producer's token through \code{grounding}, matching
 \code{\link[=plan_variety_from_manifest]{plan_variety_from_manifest()}}.
 }
