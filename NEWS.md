@@ -1,7 +1,9 @@
-# grainPlan (development version)
+# grainPlan 0.2.0
 
 ## Bug fixes
 
+* `grain_decision` and `grain_plan` now store `"ungrounded"` for anything not
+  grounded; the bracketed token of decideR 0.2.0 and earlier is still accepted.
 * `plan_nitrogen_rate()`, `plan_nitrogen_rate_from_manifest()`,
   `plan_variety()`, `plan_variety_from_manifest()`, and `plan_grade_target()`
   raised a correctly-typed decline inside `decideR` (an abstained
@@ -162,5 +164,5 @@ grounding firewall rather than re-implementing decision theory.
   `decideR::decision`) and `grain_plan` (an ordered season of decisions), with a
   `grain_is_grounded()` predicate and `print()` methods.
 * The Independent Oracle Principle firewall is inherited and enforced at every
-  verb: an `[unverified]` input forces abstention to the status quo, never a
+  verb: an ungrounded input forces abstention to the status quo, never a
   confident wrong recommendation.
