@@ -1,3 +1,7 @@
+# grainPlan 0.2.1
+
+* Documentation names kernR's mechanism-consistency test directly.
+
 # grainPlan 0.2.0
 
 ## Bug fixes

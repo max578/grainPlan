@@ -61,7 +61,7 @@ rationale, and the \link{grain_decision} result.
 }
 \details{
 Pass either a yield-draws matrix (\code{yield_draws}, one column per candidate
-rate, rows are posterior draws -- the object a PESTO inversion or a TACI
+rate, rows are posterior draws -- the object a PESTO inversion or a mechanistic
 yield-response posterior produces) together with \code{rates}, or an upstream
 \code{orchestra_manifest} to \code{\link[=plan_nitrogen_rate_from_manifest]{plan_nitrogen_rate_from_manifest()}}, which sources
 the draws and the grounding token straight from the manifest. Either way the

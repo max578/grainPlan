@@ -60,7 +60,7 @@
 #' rationale, and the [grain_decision] result.
 #'
 #' Pass either a yield-draws matrix (`yield_draws`, one column per candidate
-#' rate, rows are posterior draws -- the object a PESTO inversion or a TACI
+#' rate, rows are posterior draws -- the object a PESTO inversion or a mechanistic
 #' yield-response posterior produces) together with `rates`, or an upstream
 #' `orchestra_manifest` to [plan_nitrogen_rate_from_manifest()], which sources
 #' the draws and the grounding token straight from the manifest. Either way the
@@ -144,7 +144,7 @@ plan_nitrogen_rate <- function(yield_draws, rates, price_grain, price_n,
 #'
 #' The manifest entry point to the nitrogen-rate decision: source the yield
 #' draws and the producer's grounding token straight from an
-#' `orchestra_manifest` emitted upstream (a PESTO inversion, a TACI
+#' `orchestra_manifest` emitted upstream (a PESTO inversion, a mechanistic
 #' yield-response posterior), price them, and return a [grain_decision]. It is
 #' the formalised crop-pipeline tail at the grain layer -- a yield posterior in,
 #' a profit-priced, grounding-aware nitrogen-rate plan out -- built directly on
@@ -180,7 +180,7 @@ plan_nitrogen_rate <- function(yield_draws, rates, price_grain, price_n,
 #' @examples
 #' \dontrun{
 #' # `manifest` is an orchestra_manifest S7 object emitted upstream (a PESTO
-#' # inversion or a TACI yield-response posterior), carrying a yield-per-rate
+#' # inversion or a mechanistic yield-response posterior), carrying a yield-per-rate
 #' # draws matrix in its `outputs` slot (or `metadata$yield_draws`) and a
 #' # grounding token in `metadata$grounding`. decideR's tail reads it by its
 #' # public S7 contract, so grainPlan needs no dependency on the contract package.

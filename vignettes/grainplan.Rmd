@@ -100,7 +100,7 @@ corn <- lasrosas.corn
 # summary: a quadratic mean-yield fit against nitrogen, with the trial's
 # residual spread used to build a posterior of yield at each rate. This
 # stands in for the yield posterior an ORCHESTRA inference member (a PESTO
-# inversion, a TACI yield-response model) would emit as an
+# inversion, a mechanistic yield-response model) would emit as an
 # orchestra_manifest.
 #
 # The draws MUST be coupled across rate columns: one draw index has to mean
