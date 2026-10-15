@@ -1,3 +1,10 @@
+# grainPlan (development version)
+
+* The package has a logo.
+* README lists related packages and carries check, coverage and r-universe
+  badges.
+* CI runs lintr (report-only) and test coverage.
+
 # grainPlan 0.2.1
 
 * Documentation names kernR's mechanism-consistency test directly.

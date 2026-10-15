@@ -1,10 +1,14 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file. -->
 
-# grainPlan
+# grainPlan <img src="man/figures/logo.png" align="right" height="139" alt="grainPlan logo" />
 
 <!-- badges: start -->
 
+[![R-CMD-check](https://github.com/max578/grainPlan/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/max578/grainPlan/actions/workflows/R-CMD-check.yaml)
+[![Codecov test
+coverage](https://codecov.io/gh/max578/grainPlan/graph/badge.svg)](https://app.codecov.io/gh/max578/grainPlan)
+[![r-universe](https://max578.r-universe.dev/badges/grainPlan)](https://max578.r-universe.dev/grainPlan)
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
@@ -37,6 +41,26 @@ composes them with grain meaning.
 - **A season orchestrator** -- `plan_season()` composes several grain
   decisions into one `grain_plan`, combining their grounding worst-case
   so a plan resting on any unverified input abstains as a whole.
+
+## Related packages
+
+- [decisionSupport](https://CRAN.R-project.org/package=decisionSupport)
+  chooses between two alternatives by expected welfare from Monte Carlo
+  simulations, and values the information that would reduce the
+  uncertainty.
+- [metan](https://CRAN.R-project.org/package=metan) analyses
+  multi-environment trials, with stability measures such as AMMI, GGE
+  biplots and joint regression.
+- [nlraa](https://CRAN.R-project.org/package=nlraa) fits nonlinear
+  response curves used in agricultural research, including
+  linear-plateau and quadratic-plateau forms.
+
+grainPlan starts where these leave off. It takes draws from a fitted
+model, such as yield at each nitrogen rate or variety merit across
+trials, and prices them with grain prices, protein bands and malting
+premiums to give a recommendation. When the evidence is marked
+unverified, it declines and keeps the status quo instead of
+recommending.
 
 ## Installation
 
@@ -110,12 +134,12 @@ conservative stability rule.
 
 ## Contributing
 
-Bug reports and suggestions are welcome through the
-[issue tracker](https://github.com/max578/grainPlan/issues).
+Bug reports and suggestions are welcome through the [issue
+tracker](https://github.com/max578/grainPlan/issues).
 
 ## Citation
 
-```r
+``` r
 citation("grainPlan")
 ```
 
