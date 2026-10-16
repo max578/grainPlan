@@ -11,6 +11,7 @@ coverage](https://codecov.io/gh/max578/grainPlan/graph/badge.svg)](https://app.c
 [![r-universe](https://max578.r-universe.dev/badges/grainPlan)](https://max578.r-universe.dev/grainPlan)
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![pkgdown](https://github.com/max578/grainPlan/actions/workflows/pkgdown.yaml/badge.svg)](https://max578.github.io/grainPlan/)
 <!-- badges: end -->
 
 grainPlan is the grain-specific decision orchestrator of the ORCHESTRA
