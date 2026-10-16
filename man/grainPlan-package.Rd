@@ -22,6 +22,7 @@ them with grain meaning.
 Useful links:
 \itemize{
   \item \url{https://github.com/max578/grainPlan}
+  \item \url{https://max578.github.io/grainPlan/}
   \item Report bugs at \url{https://github.com/max578/grainPlan/issues}
 }
 
