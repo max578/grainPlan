@@ -22,7 +22,7 @@ Description: Turns an orchestra inference result into an actionable
     on any unverified input abstains rather than asserting a confident wrong
     recommendation.
 License: MIT + file LICENSE
-URL: https://github.com/max578/grainPlan
+URL: https://github.com/max578/grainPlan, https://max578.github.io/grainPlan/
 BugReports: https://github.com/max578/grainPlan/issues
 Encoding: UTF-8
 Language: en-AU
